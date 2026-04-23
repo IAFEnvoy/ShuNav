@@ -1,5 +1,16 @@
 [
   {
+    "title": "白嫖指南",
+    "fold": false,
+    "items": [
+      {
+        "title": "Adobe全家桶白嫖教程",
+        "url": "/article.html?file=adobe",
+        "author": "IAFEnvoy"
+      }
+    ]
+  },
+  {
     "title": "交通指南",
     "fold": false,
     "items": [

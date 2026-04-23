@@ -1,30 +1,60 @@
 [
   {
-    "title": "素材站",
-    "description": "常用图片与图标来源",
+    "title": "常用信息",
     "fold": false,
     "items": [
       {
-        "title": "SVG Repo",
-        "description": "免费 SVG 图标库，支持按主题快速筛选。",
-        "url": "https://www.svgrepo.com/"
+        "title": "校历",
+        "url": "/resource/image/25校历.webp"
       },
       {
-        "title": "Unsplash",
-        "description": "高质量摄影图片，适合封面与背景图。",
-        "url": "https://unsplash.com/"
+        "title": "绩点转换",
+        "url": "/resource/image/绩点转换.webp"
+      },
+      {
+        "title": "26春放假通知",
+        "url": "/resource/image/26春放假通知.webp"
+      },
+      {
+        "title": "校园地图",
+        "url": "/resource/image/校园地图.webp"
+      },
+      {
+        "title": "宝山校车时刻表",
+        "url": "/resource/image/宝山校车时刻表.webp"
       }
     ]
   },
   {
-    "title": "校园相关",
-    "description": "课程作业与社团宣传常用图片资源",
+    "title": "食堂开放时间",
+    "fold": false,
+    "items": [
+      {
+        "title": "宝山校区",
+        "url": "/resource/image/宝山食堂营业时间.webp"
+      },
+      {
+        "title": "嘉定校区",
+        "url": "/resource/image/嘉定食堂营业时间.webp"
+      },
+      {
+        "title": "延长校区",
+        "url": "/resource/image/延长食堂营业时间.webp"
+      }
+    ]
+  },
+  {
+    "title": "经典永流传",
+    "description": "学盟群祖传梗图",
     "fold": true,
     "items": [
       {
-        "title": "上海大学图库示例",
-        "description": "用于存放校内活动海报、宣传图等。",
-        "url": "https://www.shu.edu.cn/"
+        "title": "落姬坡",
+        "url": "/resource/image/落姬坡.webp"
+      },
+      {
+        "title": "醉萌亭记",
+        "url": "/resource/image/醉萌亭记.webp"
       }
     ]
   }

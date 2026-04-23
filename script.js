@@ -308,7 +308,7 @@ function normalizeArticleItem(item, categoryTitle) {
             ? item.title.trim()
             : typeof item.name === "string" && item.name.trim()
                 ? item.name.trim()
-                : "未命名教程";
+                : "未命名指南";
     const description = typeof item.description === "string" ? item.description.trim() : "";
     const author = typeof item.author === "string" && item.author.trim() ? item.author.trim() : "未知作者";
     const url = typeof item.url === "string" ? item.url.trim() : "";
@@ -333,7 +333,7 @@ function normalizeArticleCategories(rawData) {
         const title =
             typeof safeCategory.title === "string" && safeCategory.title.trim()
                 ? safeCategory.title.trim()
-                : "教程分类 " + (index + 1);
+                : "指南分类 " + (index + 1);
 
         const description =
             typeof safeCategory.description === "string" && safeCategory.description.trim()
@@ -1064,7 +1064,7 @@ function createArticleCard(articleItem) {
 
     const title = document.createElement("h3");
     title.className = "info-card-title";
-    setHighlightedText(title, articleItem.title || "未命名教程", state.searchQuery);
+    setHighlightedText(title, articleItem.title || "未命名指南", state.searchQuery);
     top.appendChild(title);
 
     const favoriteButton = document.createElement("button");
@@ -1203,7 +1203,7 @@ function renderImageSidebar() {
 }
 
 function renderArticleSidebar() {
-    renderNavList(refs.articleNavList, state.articleCategories, ARTICLE_SECTION_PREFIX, "暂无教程分类");
+    renderNavList(refs.articleNavList, state.articleCategories, ARTICLE_SECTION_PREFIX, "暂无指南分类");
 }
 
 function setupScrollSpy() {
@@ -1552,12 +1552,12 @@ function renderImageCategoriesArea() {
 function renderArticleCategorySections() {
     // 支持接收过滤过的分类数组（用于搜索）
     refs.articleCategoriesContainer.innerHTML = '';
-    refs.articleCategoriesContainer.appendChild(createTypeHead('教程'));
+    refs.articleCategoriesContainer.appendChild(createTypeHead('指南'));
 
     if (!Array.isArray(arguments[0]) || arguments[0].length === 0) {
         const empty = document.createElement("p");
         empty.className = "empty-state";
-        empty.textContent = "暂无教程内容。";
+        empty.textContent = "暂无指南内容。";
         refs.articleCategoriesContainer.appendChild(empty);
         setupScrollSpy();
         return;
@@ -1572,7 +1572,7 @@ function renderArticleCategorySections() {
         section.className = "article-category-section";
         section.id = getSectionId(ARTICLE_SECTION_PREFIX, categoryKey);
 
-        const head = createCategorySectionHead(category, category.items.length + " 篇教程", function onToggle() {
+        const head = createCategorySectionHead(category, category.items.length + " 篇指南", function onToggle() {
             toggleArticleCategoryFold(categoryKey);
         });
 
@@ -1590,7 +1590,7 @@ function renderArticleCategorySections() {
         if (category.items.length === 0) {
             const categoryEmpty = document.createElement("p");
             categoryEmpty.className = "empty-state";
-            categoryEmpty.textContent = "该分类暂时没有教程。";
+            categoryEmpty.textContent = "该分类暂时没有指南。";
             body.appendChild(categoryEmpty);
         } else {
             const grid = document.createElement("div");
@@ -1612,7 +1612,7 @@ function renderArticleCategorySections() {
 
 function renderArticleCategoriesArea() {
     const categoriesForView = getFilteredArticleCategories();
-    renderNavList(refs.articleNavList, categoriesForView, ARTICLE_SECTION_PREFIX, "暂无教程分类");
+    renderNavList(refs.articleNavList, categoriesForView, ARTICLE_SECTION_PREFIX, "暂无指南分类");
     renderArticleCategorySections(categoriesForView);
 }
 
@@ -1670,7 +1670,7 @@ function renderLoadingState() {
     refs.categoriesContainer.innerHTML = '<p class="loading-state">正在加载分类...</p>';
     refs.groupCategoriesContainer.innerHTML = '<p class="loading-state">正在加载QQ群...</p>';
     refs.imageCategoriesContainer.innerHTML = '<p class="loading-state">正在加载图片...</p>';
-    refs.articleCategoriesContainer.innerHTML = '<p class="loading-state">正在加载教程...</p>';
+    refs.articleCategoriesContainer.innerHTML = '<p class="loading-state">正在加载指南...</p>';
 }
 
 function renderErrorState(div, message) {
