@@ -1151,6 +1151,19 @@ function createSidebarNavButton(listElement, text, sectionId) {
         if (target) {
             target.scrollIntoView({ behavior: "smooth", block: "start" });
             setActiveCategory(sectionId);
+            // on small screens, clicking a nav item should close the off-canvas menu
+            try {
+                if (window.innerWidth <= 900) {
+                    const backdrop = document.querySelector('.sidebar-backdrop');
+                    if (backdrop) backdrop.click();
+                    else {
+                        document.body.classList.remove('sidebar-open');
+                        document.body.classList.remove('no-scroll');
+                    }
+                }
+            } catch (e) {
+                // ignore
+            }
         }
     });
 
@@ -1741,4 +1754,66 @@ function init() {
 
 setupFavoritesDropZone();
 setupSearch();
+// mobile sidebar toggle: create backdrop and wire up toggle button for small screens
+function setupMobileSidebarToggle() {
+    const toggle = document.getElementById('mobileSidebarToggle');
+    // create backdrop if not present
+    let backdrop = document.querySelector('.sidebar-backdrop');
+    if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.className = 'sidebar-backdrop';
+        document.body.appendChild(backdrop);
+    }
+
+    if (!toggle) return;
+
+    // helper to lock/unlock scroll and touch gestures
+    let preventTouchMove = null;
+
+    function lockScrollAndGestures() {
+        document.body.classList.add('no-scroll');
+        preventTouchMove = function (ev) { ev.preventDefault(); };
+        document.addEventListener('touchmove', preventTouchMove, { passive: false });
+    }
+
+    function unlockScrollAndGestures() {
+        document.body.classList.remove('no-scroll');
+        if (preventTouchMove) {
+            document.removeEventListener('touchmove', preventTouchMove, { passive: false });
+            preventTouchMove = null;
+        }
+    }
+
+    toggle.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        // only operate as off-canvas toggle on narrow screens
+        if (window.innerWidth > 900) return;
+
+        const opened = document.body.classList.toggle('sidebar-open');
+        if (opened) lockScrollAndGestures();
+        else unlockScrollAndGestures();
+    });
+
+    backdrop.addEventListener('click', function () {
+        document.body.classList.remove('sidebar-open');
+        unlockScrollAndGestures();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            document.body.classList.remove('sidebar-open');
+            unlockScrollAndGestures();
+        }
+    });
+
+    window.addEventListener('resize', function () {
+        if (window.innerWidth > 900 && document.body.classList.contains('sidebar-open')) {
+            document.body.classList.remove('sidebar-open');
+            unlockScrollAndGestures();
+        }
+    });
+}
+
+setupMobileSidebarToggle();
 init();

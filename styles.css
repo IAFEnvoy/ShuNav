@@ -128,6 +128,38 @@ body {
   color: #8c9a96;
 }
 
+/* mobile menu button hidden by default, shown only on small screens */
+/* Floating action button (menu) - left bottom fixed */
+.mobile-menu-fab {
+  position: fixed;
+  left: 16px;
+  bottom: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  z-index: 60;
+  cursor: pointer;
+}
+
+.mobile-menu-fab img {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+/* disable page scrolling when sidebar open */
+body.no-scroll {
+  overflow: hidden;
+  height: 100vh;
+  touch-action: none;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -727,8 +759,19 @@ body {
     font-size: 28px;
   }
 
+  /* make sidebar nav a vertical list on small screens */
   .category-nav ul {
-    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    display: block;
+    padding: 0;
+  }
+
+  .category-nav li {
+    margin-bottom: 8px;
+  }
+
+  .category-nav .category-link {
+    width: 100%;
+    display: block;
   }
 
   .content {
@@ -756,5 +799,64 @@ body {
 
   .sidebar-footer {
     margin-top: 14px;
+  }
+
+  /* Off-canvas sidebar behavior for small screens */
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mobile-menu-btn {
+    display: none;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 80%;
+    max-width: 320px;
+    transform: translateX(-100%);
+    transition: transform 220ms ease;
+    z-index: 40;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+    background: linear-gradient(180deg, var(--bg-side), #f3f8ef);
+    overflow-y: auto;
+  }
+
+  /* when body has .sidebar-open, slide in the sidebar and reveal backdrop */
+  body.sidebar-open .sidebar {
+    transform: translateX(0%);
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 220ms ease;
+    z-index: 30;
+  }
+
+  body.sidebar-open .sidebar-backdrop {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* ensure main content sits above backdrop */
+  .content {
+    position: relative;
+    z-index: 10;
+  }
+}
+
+/* hide floating FAB on wide screens */
+@media (min-width: 901px) {
+  .mobile-menu-fab {
+    display: none;
   }
 }
