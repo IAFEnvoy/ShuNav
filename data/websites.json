@@ -16,6 +16,11 @@
                 "logo": "img/office-svgrepo-com.svg"
             },
             {
+                "name": "VPN使用说明",
+                "url": "https://vpn.shu.edu.cn/",
+                "logo": "img/vpn-svgrepo-com.svg"
+            },
+            {
                 "name": "正版软件管理平台",
                 "url": "https://software.shu.edu.cn",
                 "logo": "img/software-install-svgrepo-com.svg",
@@ -28,11 +33,6 @@
                 "description": "查询空教室"
             },
             {
-                "name": "体育赛事成绩公布",
-                "url": "http://app.ydh800.cn/ADFB",
-                "logo": "img/sport-svgrepo-com.svg"
-            },
-            {
                 "name": "心理健康信息化管理平台",
                 "url": "https://xljk.shu.edu.cn",
                 "logo": "img/heart-shine-svgrepo-com.svg"
@@ -41,11 +41,6 @@
                 "name": "网上教学辅助平台",
                 "url": "https://learning.shu.edu.cn/portal",
                 "logo": "img/classroom-svgrepo-com.svg"
-            },
-            {
-                "name": "电话查询",
-                "url": "https://www.shu.edu.cn/dhcx.htm",
-                "logo": "img/telephone-svgrepo-com.svg"
             },
             {
                 "name": "校医院门诊",
@@ -66,11 +61,6 @@
                 "name": "校友会",
                 "url": "https://alumni.shu.edu.cn/",
                 "description": "涉及小米奖学金、苏州工业园区奖学金等"
-            },
-            {
-                "name": "VPN使用说明",
-                "url": "https://vpn.shu.edu.cn/",
-                "logo": "img/vpn-svgrepo-com.svg"
             }
         ]
     },
@@ -90,10 +80,6 @@
                 "logo": "img/three-arrows-diversion-svgrepo-com.svg"
             },
             {
-                "name": "活动报名",
-                "url": "https://www.sz.shu.edu.cn/"
-            },
-            {
                 "name": "本科生院",
                 "url": "https://bksy.shu.edu.cn/",
                 "description": "查询思政选必，第二课堂，四类认证课程等"
@@ -103,6 +89,16 @@
                 "url": "https://www.shu.edu.cn/yxsz.htm",
                 "logo": "img/list-ul-alt-svgrepo-com.svg",
                 "description": "每个院的官网集合，部分官网有保研标准"
+            },
+            {
+                "name": "电话查询",
+                "url": "https://www.shu.edu.cn/dhcx.htm",
+                "logo": "img/telephone-svgrepo-com.svg"
+            },
+            {
+                "name": "体育赛事成绩公布",
+                "url": "http://app.ydh800.cn/ADFB",
+                "logo": "img/sport-svgrepo-com.svg"
             }
         ]
     },

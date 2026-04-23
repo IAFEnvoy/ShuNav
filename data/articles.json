@@ -1,31 +1,17 @@
 [
   {
-    "title": "新生指南",
-    "description": "入学与选课相关教程",
+    "title": "交通指南",
     "fold": false,
     "items": [
       {
-        "title": "选课流程说明",
-        "description": "介绍选课前准备、筛课与补退选要点。",
-        "url":"",
-        "author": "学习支持组"
+        "title": "新生入校交通指南·2025秋季版",
+        "url": "https://mp.weixin.qq.com/s/4mpJij5GqUjZWalctVVkyQ",
+        "author": "上海大学公共交通研究社"
       },
       {
-        "title": "校园网连接教程",
-        "description": "覆盖宿舍有线、无线和常见故障处理。",
-        "author": "信息中心"
-      }
-    ]
-  },
-  {
-    "title": "效率工具",
-    "description": "提升学习效率的实用教程",
-    "fold": false,
-    "items": [
-      {
-        "title": "Markdown 快速入门",
-        "description": "从基础语法到课程作业排版实践。",
-        "author": "技术社团"
+        "title": "跨校区交通指南·2025年11月版",
+        "url": "https://mp.weixin.qq.com/s/3yvTgaXCTcS46EKxSqFNXw",
+        "author": "上海大学公共交通研究社"
       }
     ]
   }

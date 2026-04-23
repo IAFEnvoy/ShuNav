@@ -6,11 +6,13 @@
     "items": [
       {
         "title": "SVG Repo",
-        "description": "免费 SVG 图标库，支持按主题快速筛选。"
+        "description": "免费 SVG 图标库，支持按主题快速筛选。",
+        "url": "https://www.svgrepo.com/"
       },
       {
         "title": "Unsplash",
-        "description": "高质量摄影图片，适合封面与背景图。"
+        "description": "高质量摄影图片，适合封面与背景图。",
+        "url": "https://unsplash.com/"
       }
     ]
   },
@@ -21,7 +23,8 @@
     "items": [
       {
         "title": "上海大学图库示例",
-        "description": "用于存放校内活动海报、宣传图等。"
+        "description": "用于存放校内活动海报、宣传图等。",
+        "url": "https://www.shu.edu.cn/"
       }
     ]
   }

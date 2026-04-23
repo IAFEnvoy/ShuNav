@@ -477,6 +477,7 @@ body {
   padding: 14px;
   display: grid;
   gap: 10px;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .qq-card-top {
@@ -570,6 +571,28 @@ body {
   display: grid;
   gap: 10px;
   position: relative;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+/* Hover / focus animation to match网站卡（纯 CSS 实现） */
+.qq-card:hover,
+.qq-card:focus-visible,
+.image-card:hover,
+.image-card:focus-visible,
+.article-card:hover,
+.article-card:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(26, 69, 61, 0.15);
+  border-color: #b8d6cd;
+  outline: none;
+}
+
+/* 禁用态不触发动画 */
+.qq-card.disabled:hover,
+.image-card.disabled:hover,
+.article-card.disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .info-card-top {

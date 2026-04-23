@@ -1,4 +1,4 @@
-import {openInNewPage, openNetworkConnectPage} from "./open-link.js";
+import { openInNewPage, openNetworkConnectPage } from "./open-link.js";
 
 const WEBSITE_DATA_SOURCES = ["/data/websites.json", "./data/websites.json"];
 const GROUP_DATA_SOURCES = ["/data/groups.json", "./data/groups.json"];
@@ -99,9 +99,9 @@ function setHighlightedText(element, text, query) {
 function matchesSearch(item, query) {
     if (!query) return true;
 
-    const name = normalizeSearchText(item.name);
-    const url = normalizeSearchText(item.url);
-    const description = normalizeSearchText(item.description);
+    const name = normalizeSearchText((item && (item.name || item.title)) || "");
+    const url = normalizeSearchText((item && item.url) || "");
+    const description = normalizeSearchText((item && item.description) || "");
 
     return name.includes(query) || url.includes(query) || description.includes(query);
 }
@@ -122,7 +122,8 @@ function getFilteredCategories() {
                 title: category.title,
                 description: category.description,
                 fold: category.fold,
-                collapsed: category.collapsed,
+                // 在搜索时展开所有匹配到结果的分类，方便用户查看
+                collapsed: false,
                 items: matchedItems
             };
         })
@@ -185,17 +186,15 @@ function normalizeCategories(rawData) {
 }
 
 function normalizeGroupItem(item, categoryTitle) {
-    if (!item || typeof item !== "object") {
-        return null;
-    }
+    if (!item || typeof item !== "object") return null;
 
     const name = typeof item.name === "string" && item.name.trim() ? item.name.trim() : "未命名群";
-    const qq = typeof item.qq === "string" || typeof item.qq === "number" ? String(item.qq).trim() : "";
+    const url = typeof item.url === "string" || typeof item.url === "number" ? String(item.url).trim() : "";
     const description = typeof item.description === "string" ? item.description.trim() : "";
 
     return {
         name: name,
-        qq: qq,
+        url: url,
         description: description,
         category: categoryTitle
     };
@@ -251,10 +250,12 @@ function normalizeImageItem(item, categoryTitle) {
                 ? item.name.trim()
                 : "未命名图片";
     const description = typeof item.description === "string" ? item.description.trim() : "";
+    const url = typeof item.url === "string" ? item.url.trim() : "";
 
     return {
         title: title,
         description: description,
+        url: url,
         category: categoryTitle
     };
 }
@@ -310,11 +311,13 @@ function normalizeArticleItem(item, categoryTitle) {
                 : "未命名教程";
     const description = typeof item.description === "string" ? item.description.trim() : "";
     const author = typeof item.author === "string" && item.author.trim() ? item.author.trim() : "未知作者";
+    const url = typeof item.url === "string" ? item.url.trim() : "";
 
     return {
         title: title,
         description: description,
         author: author,
+        url: url,
         category: categoryTitle
     };
 }
@@ -364,7 +367,7 @@ function saveFavorites() {
 function fetchDataBySources(sources) {
     return sources.reduce(function chainFetch(previousPromise, source) {
         return previousPromise.catch(function onError() {
-            return fetch(source, {cache: "no-store"}).then(function onResponse(response) {
+            return fetch(source, { cache: "no-store" }).then(function onResponse(response) {
                 if (!response.ok) {
                     throw new Error("Fetch failed for " + source + " with HTTP " + response.status);
                 }
@@ -490,7 +493,7 @@ function getFavoriteKeyForUnified(item, type) {
         case "website":
             return "website|" + (item && item.url ? item.url : "");
         case "group":
-            return "group|" + (item && item.qq ? item.qq : "");
+            return "group|" + (item && item.url ? item.url : "");
         case "image":
             return (
                 "image|" + (item && item.category ? item.category : "") + "|" + (item && item.title ? item.title : "")
@@ -509,14 +512,90 @@ function getFavoriteKeyForUnified(item, type) {
     }
 }
 
+function getFilteredGroupCategories() {
+    const query = normalizeSearchText(state.searchQuery);
+    if (!query) return state.groupCategories;
+
+    return state.groupCategories
+        .map(function mapCategory(category) {
+            const matchedItems = category.items.filter(function filterItem(item) {
+                return matchesSearch(item, query);
+            });
+
+            return {
+                key: category.key,
+                title: category.title,
+                description: category.description,
+                fold: category.fold,
+                // 搜索时展开匹配分类
+                collapsed: false,
+                items: matchedItems
+            };
+        })
+        .filter(function filterCategory(category) {
+            return category.items.length > 0;
+        });
+}
+
+function getFilteredImageCategories() {
+    const query = normalizeSearchText(state.searchQuery);
+    if (!query) return state.imageCategories;
+
+    return state.imageCategories
+        .map(function mapCategory(category) {
+            const matchedItems = category.items.filter(function filterItem(item) {
+                return matchesSearch(item, query);
+            });
+
+            return {
+                key: category.key,
+                title: category.title,
+                description: category.description,
+                fold: category.fold,
+                // 搜索时展开匹配分类
+                collapsed: false,
+                items: matchedItems
+            };
+        })
+        .filter(function filterCategory(category) {
+            return category.items.length > 0;
+        });
+}
+
+function getFilteredArticleCategories() {
+    const query = normalizeSearchText(state.searchQuery);
+    if (!query) return state.articleCategories;
+
+    return state.articleCategories
+        .map(function mapCategory(category) {
+            const matchedItems = category.items.filter(function filterItem(item) {
+                return matchesSearch(item, query);
+            });
+
+            return {
+                key: category.key,
+                title: category.title,
+                description: category.description,
+                fold: category.fold,
+                // 搜索时展开匹配分类
+                collapsed: false,
+                items: matchedItems
+            };
+        })
+        .filter(function filterCategory(category) {
+            return category.items.length > 0;
+        });
+}
+
 function addToUnifiedFavorites(url, type) {
     removeFromUnifiedFavorites(url);
-    state.unifiedFavorites.push({type, url});
-    saveFavorites()
+    state.unifiedFavorites.push({ type, url });
+    saveFavorites();
 }
 
 function removeFromUnifiedFavorites(url) {
     state.unifiedFavorites = state.unifiedFavorites.filter(e => e.url !== url);
+    saveFavorites();
 }
 
 function reorderUnifiedFavorites(sourceUrl, targetUrl, insertBefore) {
@@ -557,7 +636,7 @@ function moveUnifiedFavoriteToEnd(sourceKey) {
 function enableFavoriteDragGeneric(card, item, type) {
     if (!card) return;
 
-    const key = getFavoriteKeyForUnified(item, type);
+    const key = item.url;
     card.classList.add("draggable-card");
     card.draggable = true;
 
@@ -624,42 +703,7 @@ function getSectionId(prefix, index) {
 }
 
 function isFavorited(url) {
-    if (!url) return false;
-    return state.unifiedFavorites.some(function (e) {
-        return e.type === "website" && e.url === url;
-    });
-}
-
-function isGroupFavorited(qq) {
-    if (!qq) return false;
-    return state.unifiedFavorites.some(function (e) {
-        return e.type === "group" && e.url  === qq;
-    });
-}
-
-function isImageFavorited(imageItem) {
-    if (!imageItem) return false;
-    return state.unifiedFavorites.some(function (e) {
-        return (
-            e.type === "image" &&
-            e.item &&
-            e.item.title === imageItem.title &&
-            e.item.category === imageItem.category
-        );
-    });
-}
-
-function isArticleFavorited(articleItem) {
-    if (!articleItem) return false;
-    return state.unifiedFavorites.some(function (e) {
-        return (
-            e.type === "article" &&
-            e.item &&
-            e.item.title === articleItem.title &&
-            e.item.author === articleItem.author &&
-            e.item.category === articleItem.category
-        );
-    });
+    return state.unifiedFavorites.some(e => e.url === url);
 }
 
 function setFavoriteButtonState(button, url) {
@@ -683,92 +727,10 @@ function openCardLink(url) {
     window.open(url, "_blank", "noopener,noreferrer");
 }
 
-function toggleFavorite(item) {
-    const key = getFavoriteKeyForUnified(item, "website");
-    const exists = state.unifiedFavorites.some(function (e) {
-        return getFavoriteKeyForUnified(e.item, e.type) === key;
-    });
-
-    if (!exists) {
-        addToUnifiedFavorites(item.url, "website");
-    } else {
-        removeFromUnifiedFavorites(item.url);
-    }
-
+function toggleFavorite(item, type) {
+    if (isFavorited(item.url)) removeFromUnifiedFavorites(item.url);
+    else addToUnifiedFavorites(item.url, type);
     renderFavorites();
-    renderCategoriesArea();
-}
-
-function setGroupFavoriteButtonState(button, qq) {
-    const active = isGroupFavorited(qq);
-    button.classList.toggle("active", active);
-    button.textContent = active ? "★" : "☆";
-    button.setAttribute("aria-pressed", String(active));
-    button.title = active ? "移出QQ群收藏夹" : "加入QQ群收藏夹";
-}
-
-function setImageFavoriteButtonState(button, imageItem) {
-    const active = isImageFavorited(imageItem);
-    button.classList.toggle("active", active);
-    button.textContent = active ? "★" : "☆";
-    button.setAttribute("aria-pressed", String(active));
-    button.title = active ? "移出图片收藏夹" : "加入图片收藏夹";
-}
-
-function setArticleFavoriteButtonState(button, articleItem) {
-    const active = isArticleFavorited(articleItem);
-    button.classList.toggle("active", active);
-    button.textContent = active ? "★" : "☆";
-    button.setAttribute("aria-pressed", String(active));
-    button.title = active ? "移出教程收藏夹" : "加入教程收藏夹";
-}
-
-function toggleGroupFavorite(groupItem) {
-    const key = getFavoriteKeyForUnified(groupItem, "group");
-    const exists = state.unifiedFavorites.some(function (e) {
-        return getFavoriteKeyForUnified(e.item, e.type) === key;
-    });
-
-    if (!exists) {
-        addToUnifiedFavorites(groupItem.qq, "group");
-    } else {
-        removeFromUnifiedFavorites(groupItem.qq);
-    }
-
-    renderFavorites();
-    renderGroupCategoriesArea();
-}
-
-function toggleImageFavorite(imageItem) {
-    const key = getFavoriteKeyForUnified(imageItem, "image");
-    const exists = state.unifiedFavorites.some(function (e) {
-        return getFavoriteKeyForUnified(e.item, e.type) === key;
-    });
-
-    if (!exists) {
-        addToUnifiedFavorites(imageItem.url, "image");
-    } else {
-        removeFromUnifiedFavorites(imageItem.url);
-    }
-
-    renderFavorites();
-    renderImageCategoriesArea();
-}
-
-function toggleArticleFavorite(articleItem) {
-    const key = getFavoriteKeyForUnified(articleItem, "article");
-    const exists = state.unifiedFavorites.some(function (e) {
-        return getFavoriteKeyForUnified(e.item, e.type) === key;
-    });
-
-    if (!exists) {
-        addToUnifiedFavorites(articleItem.url, "article");
-    } else {
-        removeFromUnifiedFavorites(articleItem.url);
-    }
-
-    renderFavorites();
-    renderArticleCategoriesArea();
 }
 
 function clearFavoriteDragStyles() {
@@ -863,7 +825,8 @@ function createWebsiteCard(item, options) {
 
         favoriteButton.addEventListener("click", function onFavoriteClick(event) {
             event.stopPropagation();
-            toggleFavorite(item);
+            toggleFavorite(item, "website");
+            renderCategoriesArea();
         });
 
         card.appendChild(favoriteButton);
@@ -916,19 +879,18 @@ function createGroupCard(groupItem) {
     const favoriteButton = document.createElement("button");
     favoriteButton.type = "button";
     favoriteButton.className = "favorite-toggle group-favorite-toggle";
-    setGroupFavoriteButtonState(favoriteButton, groupItem.qq);
+    setFavoriteButtonState(favoriteButton, groupItem.url);
     favoriteButton.addEventListener("click", function onGroupFavoriteClick(event) {
         event.preventDefault();
         event.stopPropagation();
 
-        if (favoriteButton.disabled) {
-            return;
-        }
+        if (favoriteButton.disabled) return;
 
-        toggleGroupFavorite(groupItem);
+        toggleFavorite(groupItem, "group");
+        renderGroupCategoriesArea();
     });
 
-    if (!groupItem.qq) {
+    if (!groupItem.url) {
         favoriteButton.disabled = true;
         favoriteButton.title = "无群号不可收藏";
     }
@@ -938,7 +900,7 @@ function createGroupCard(groupItem) {
 
     const name = document.createElement("h3");
     name.className = "qq-name";
-    name.textContent = groupItem.name;
+    setHighlightedText(name, groupItem.name || "未命名群", state.searchQuery);
     top.appendChild(name);
 
     const meta = document.createElement("div");
@@ -946,7 +908,7 @@ function createGroupCard(groupItem) {
 
     const qqNumber = document.createElement("span");
     qqNumber.className = "qq-number";
-    qqNumber.textContent = groupItem.qq || "未提供群号";
+    setHighlightedText(qqNumber, groupItem.url || "未提供群号", state.searchQuery);
     meta.appendChild(qqNumber);
 
     const copyButton = document.createElement("button");
@@ -965,7 +927,7 @@ function createGroupCard(groupItem) {
     copyText.textContent = "复制";
     copyButton.appendChild(copyText);
 
-    if (!groupItem.qq) {
+    if (!groupItem.url) {
         copyButton.disabled = true;
     }
 
@@ -973,11 +935,11 @@ function createGroupCard(groupItem) {
         event.preventDefault();
         event.stopPropagation();
 
-        if (!groupItem.qq || copyButton.disabled) {
+        if (!groupItem.url || copyButton.disabled) {
             return;
         }
 
-        copyToClipboard(groupItem.qq)
+        copyToClipboard(groupItem.url)
             .then(function onCopied() {
                 copyButton.classList.add("copied");
                 copyButton.title = "已复制";
@@ -1003,7 +965,7 @@ function createGroupCard(groupItem) {
 
     const description = document.createElement("p");
     description.className = "qq-description";
-    description.textContent = groupItem.description || "暂无介绍";
+    setHighlightedText(description, groupItem.description || "暂无介绍", state.searchQuery);
     card.appendChild(description);
 
     return card;
@@ -1012,24 +974,47 @@ function createGroupCard(groupItem) {
 function createImageCard(imageItem) {
     const card = document.createElement("article");
     card.className = "image-card";
+    card.setAttribute("role", "button");
 
+    if (!imageItem.url) {
+        card.classList.add("disabled");
+        card.tabIndex = -1;
+    } else {
+        card.tabIndex = 0;
+        card.addEventListener("click", function onCardClick() {
+            if (Date.now() < dragState.suppressClickUntil) {
+                return;
+            }
+
+            openCardLink(imageItem.url);
+        });
+
+        card.addEventListener("keydown", function onCardKeydown(event) {
+            if (event.target !== card) return;
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openCardLink(imageItem.url);
+            }
+        });
+    }
 
     const top = document.createElement("div");
     top.className = "info-card-top";
 
     const title = document.createElement("h3");
     title.className = "info-card-title";
-    title.textContent = imageItem.title;
+    setHighlightedText(title, imageItem.title || "未命名图片", state.searchQuery);
     top.appendChild(title);
 
     const favoriteButton = document.createElement("button");
     favoriteButton.type = "button";
     favoriteButton.className = "favorite-toggle info-favorite-toggle";
-    setImageFavoriteButtonState(favoriteButton, imageItem);
+    setFavoriteButtonState(favoriteButton, imageItem.url);
     favoriteButton.addEventListener("click", function onImageFavoriteClick(event) {
         event.preventDefault();
         event.stopPropagation();
-        toggleImageFavorite(imageItem);
+        toggleFavorite(imageItem, "image");
+        renderImageCategoriesArea();
     });
     top.appendChild(favoriteButton);
 
@@ -1037,7 +1022,7 @@ function createImageCard(imageItem) {
 
     const description = document.createElement("p");
     description.className = "info-card-description";
-    description.textContent = imageItem.description || "暂无介绍";
+    setHighlightedText(description, imageItem.description || "暂无介绍", state.searchQuery);
     card.appendChild(description);
 
     return card;
@@ -1046,6 +1031,32 @@ function createImageCard(imageItem) {
 function createArticleCard(articleItem) {
     const card = document.createElement("article");
     card.className = "article-card";
+    card.setAttribute("role", "button");
+
+    if (!articleItem.url) {
+        card.classList.add("disabled");
+        card.tabIndex = -1;
+    } else {
+        card.tabIndex = 0;
+        card.addEventListener("click", function onCardClick() {
+            if (Date.now() < dragState.suppressClickUntil) {
+                return;
+            }
+
+            openCardLink(articleItem.url);
+        });
+
+        card.addEventListener("keydown", function onCardKeydown(event) {
+            if (event.target !== card) {
+                return;
+            }
+
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openCardLink(articleItem.url);
+            }
+        });
+    }
 
 
     const top = document.createElement("div");
@@ -1053,17 +1064,18 @@ function createArticleCard(articleItem) {
 
     const title = document.createElement("h3");
     title.className = "info-card-title";
-    title.textContent = articleItem.title;
+    setHighlightedText(title, articleItem.title || "未命名教程", state.searchQuery);
     top.appendChild(title);
 
     const favoriteButton = document.createElement("button");
     favoriteButton.type = "button";
     favoriteButton.className = "favorite-toggle info-favorite-toggle";
-    setArticleFavoriteButtonState(favoriteButton, articleItem);
+    setFavoriteButtonState(favoriteButton, articleItem.url);
     favoriteButton.addEventListener("click", function onArticleFavoriteClick(event) {
         event.preventDefault();
         event.stopPropagation();
-        toggleArticleFavorite(articleItem);
+        toggleFavorite(articleItem, "article");
+        renderArticleCategoriesArea();
     });
     top.appendChild(favoriteButton);
 
@@ -1071,12 +1083,19 @@ function createArticleCard(articleItem) {
 
     const description = document.createElement("p");
     description.className = "info-card-description";
-    description.textContent = articleItem.description || "暂无介绍";
+    setHighlightedText(description, articleItem.description || "暂无介绍", state.searchQuery);
     card.appendChild(description);
 
     const author = document.createElement("p");
     author.className = "article-author";
-    author.textContent = "作者：" + (articleItem.author || "未知作者");
+    const authorLabel = document.createElement("span");
+    authorLabel.className = "author-label";
+    authorLabel.textContent = "作者：";
+    const authorName = document.createElement("span");
+    authorName.className = "author-name";
+    setHighlightedText(authorName, articleItem.author || "未知作者", state.searchQuery);
+    author.appendChild(authorLabel);
+    author.appendChild(authorName);
     card.appendChild(author);
 
     return card;
@@ -1130,7 +1149,7 @@ function createSidebarNavButton(listElement, text, sectionId) {
         const target = document.getElementById(sectionId);
 
         if (target) {
-            target.scrollIntoView({behavior: "smooth", block: "start"});
+            target.scrollIntoView({ behavior: "smooth", block: "start" });
             setActiveCategory(sectionId);
         }
     });
@@ -1320,8 +1339,19 @@ function createCategorySectionHead(category, countText, onToggleFold) {
     return head;
 }
 
+function createTypeHead(title) {
+    const section = document.createElement("section");
+    section.className = 'category-section';
+    const h2 = document.createElement('h2');
+    h2.style.margin = '0px';
+    h2.innerText = title;
+    section.appendChild(h2);
+    return section;
+}
+
 function renderCategorySections(categoriesForView) {
-    refs.categoriesContainer.innerHTML = '<section class="category-section"><h2 style="margin:0px;">网站</h2></section>';
+    refs.categoriesContainer.innerHTML = '';
+    refs.categoriesContainer.appendChild(createTypeHead('网站'));
 
     if (categoriesForView.length === 0) {
         const noMatch = document.createElement("p");
@@ -1364,7 +1394,7 @@ function renderCategorySections(categoriesForView) {
             grid.className = "card-grid";
 
             category.items.forEach(function forEachItem(item) {
-                grid.appendChild(createWebsiteCard(item, {showCategory: false, enableDrag: false}));
+                grid.appendChild(createWebsiteCard(item, { showCategory: false, enableDrag: false }));
             });
 
             body.appendChild(grid);
@@ -1385,9 +1415,11 @@ function renderCategoriesArea() {
 }
 
 function renderGroupCategorySections() {
-    refs.groupCategoriesContainer.innerHTML = '<section class="category-section"><h2 style="margin:0px;">QQ群</h2></section>';
+    // 接受预过滤后的分类数组（方便搜索时只显示匹配项）
+    refs.groupCategoriesContainer.innerHTML = '';
+    refs.groupCategoriesContainer.appendChild(createTypeHead('QQ群'));
 
-    if (state.groupCategories.length === 0) {
+    if (!Array.isArray(arguments[0]) || arguments[0].length === 0) {
         const empty = document.createElement("p");
         empty.className = "empty-state";
         empty.textContent = "暂无QQ群内容。";
@@ -1396,7 +1428,9 @@ function renderGroupCategorySections() {
         return;
     }
 
-    state.groupCategories.forEach(function forEachGroupCategory(category, index) {
+    const categoriesForView = arguments[0];
+
+    categoriesForView.forEach(function forEachGroupCategory(category, index) {
         const categoryKey = category && category.key != null ? category.key : String(index);
 
         const section = document.createElement("section");
@@ -1443,14 +1477,17 @@ function renderGroupCategorySections() {
 }
 
 function renderGroupCategoriesArea() {
-    renderGroupSidebar();
-    renderGroupCategorySections();
+    const categoriesForView = getFilteredGroupCategories();
+    renderNavList(refs.groupNavList, categoriesForView, GROUP_SECTION_PREFIX, "暂无QQ群分类");
+    renderGroupCategorySections(categoriesForView);
 }
 
 function renderImageCategorySections() {
-    refs.imageCategoriesContainer.innerHTML = '<section class="category-section"><h2 style="margin:0px;">图片</h2></section>';
+    // 支持接收过滤过的分类列表（用于搜索）
+    refs.imageCategoriesContainer.innerHTML = '';
+    refs.imageCategoriesContainer.appendChild(createTypeHead('图片'));
 
-    if (state.imageCategories.length === 0) {
+    if (!Array.isArray(arguments[0]) || arguments[0].length === 0) {
         const empty = document.createElement("p");
         empty.className = "empty-state";
         empty.textContent = "暂无图片内容。";
@@ -1459,7 +1496,9 @@ function renderImageCategorySections() {
         return;
     }
 
-    state.imageCategories.forEach(function forEachImageCategory(category, index) {
+    const categoriesForView = arguments[0];
+
+    categoriesForView.forEach(function forEachImageCategory(category, index) {
         const categoryKey = category && category.key != null ? category.key : String(index);
 
         const section = document.createElement("section");
@@ -1505,14 +1544,17 @@ function renderImageCategorySections() {
 }
 
 function renderImageCategoriesArea() {
-    renderImageSidebar();
-    renderImageCategorySections();
+    const categoriesForView = getFilteredImageCategories();
+    renderNavList(refs.imageNavList, categoriesForView, IMAGE_SECTION_PREFIX, "暂无图片分类");
+    renderImageCategorySections(categoriesForView);
 }
 
 function renderArticleCategorySections() {
-    refs.articleCategoriesContainer.innerHTML = '<section class="category-section"><h2 style="margin:0px;">教程</h2></section>';
+    // 支持接收过滤过的分类数组（用于搜索）
+    refs.articleCategoriesContainer.innerHTML = '';
+    refs.articleCategoriesContainer.appendChild(createTypeHead('教程'));
 
-    if (state.articleCategories.length === 0) {
+    if (!Array.isArray(arguments[0]) || arguments[0].length === 0) {
         const empty = document.createElement("p");
         empty.className = "empty-state";
         empty.textContent = "暂无教程内容。";
@@ -1521,7 +1563,9 @@ function renderArticleCategorySections() {
         return;
     }
 
-    state.articleCategories.forEach(function forEachArticleCategory(category, index) {
+    const categoriesForView = arguments[0];
+
+    categoriesForView.forEach(function forEachArticleCategory(category, index) {
         const categoryKey = category && category.key != null ? category.key : String(index);
 
         const section = document.createElement("section");
@@ -1567,8 +1611,9 @@ function renderArticleCategorySections() {
 }
 
 function renderArticleCategoriesArea() {
-    renderArticleSidebar();
-    renderArticleCategorySections();
+    const categoriesForView = getFilteredArticleCategories();
+    renderNavList(refs.articleNavList, categoriesForView, ARTICLE_SECTION_PREFIX, "暂无教程分类");
+    renderArticleCategorySections(categoriesForView);
 }
 
 function setupSearch() {
@@ -1579,6 +1624,9 @@ function setupSearch() {
     refs.searchInput.addEventListener("input", function onSearchInput(event) {
         state.searchQuery = event.target.value || "";
         renderCategoriesArea();
+        renderGroupCategoriesArea();
+        renderImageCategoriesArea();
+        renderArticleCategoriesArea();
     });
 }
 
@@ -1618,20 +1666,18 @@ function renderFavorites() {
 }
 
 function renderLoadingState() {
-    refs.favoritesGrid.innerHTML = "<p class=\"loading-state\">正在加载收藏夹...</p>";
-    refs.categoriesContainer.innerHTML = "<p class=\"loading-state\">正在加载分类...</p>";
-    refs.groupCategoriesContainer.innerHTML = "<p class=\"loading-state\">正在加载QQ群...</p>";
-    refs.imageCategoriesContainer.innerHTML = "<p class=\"loading-state\">正在加载图片...</p>";
-    refs.articleCategoriesContainer.innerHTML = "<p class=\"loading-state\">正在加载教程...</p>";
+    refs.favoritesGrid.innerHTML = '<p class="loading-state">正在加载收藏夹...</p>';
+    refs.categoriesContainer.innerHTML = '<p class="loading-state">正在加载分类...</p>';
+    refs.groupCategoriesContainer.innerHTML = '<p class="loading-state">正在加载QQ群...</p>';
+    refs.imageCategoriesContainer.innerHTML = '<p class="loading-state">正在加载图片...</p>';
+    refs.articleCategoriesContainer.innerHTML = '<p class="loading-state">正在加载教程...</p>';
 }
 
 function renderErrorState(div, message) {
     div.innerHTML = "";
-
     const error = document.createElement("p");
     error.className = "error-state";
     error.textContent = message;
-
     div.appendChild(error);
     setupScrollSpy();
 }
@@ -1676,7 +1722,7 @@ function init() {
         state.itemByName = {}
         results[0].flatMap(x => x.items).forEach(item => state.itemByName[item.url] = item)
         //FIXME::Normalize QQ key
-        results[1].flatMap(x => x.items).forEach(item => state.itemByName[item.qq] = item)
+        results[1].flatMap(x => x.items).forEach(item => state.itemByName[item.url] = item)
         results[2].flatMap(x => x.items).forEach(item => state.itemByName[item.url] = item)
         results[3].flatMap(x => x.items).forEach(item => state.itemByName[item.url] = item)
 
