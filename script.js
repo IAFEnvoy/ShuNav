@@ -1757,6 +1757,7 @@ setupSearch();
 // mobile sidebar toggle: create backdrop and wire up toggle button for small screens
 function setupMobileSidebarToggle() {
     const toggle = document.getElementById('mobileSidebarToggle');
+    const sidebar = document.querySelector('.sidebar');
     // create backdrop if not present
     let backdrop = document.querySelector('.sidebar-backdrop');
     if (!backdrop) {
@@ -1770,9 +1771,29 @@ function setupMobileSidebarToggle() {
     // helper to lock/unlock scroll and touch gestures
     let preventTouchMove = null;
 
+    function isMobileViewport() {
+        return window.innerWidth <= 900;
+    }
+
+    function openSidebar() {
+        document.body.classList.add('sidebar-open');
+        lockScrollAndGestures();
+    }
+
+    function closeSidebar() {
+        document.body.classList.remove('sidebar-open');
+        unlockScrollAndGestures();
+    }
+
     function lockScrollAndGestures() {
         document.body.classList.add('no-scroll');
-        preventTouchMove = function (ev) { ev.preventDefault(); };
+        // Allow vertical scrolling inside sidebar, block background page touch scrolling.
+        preventTouchMove = function (ev) {
+            if (sidebar && sidebar.contains(ev.target)) {
+                return;
+            }
+            ev.preventDefault();
+        };
         document.addEventListener('touchmove', preventTouchMove, { passive: false });
     }
 
@@ -1788,31 +1809,65 @@ function setupMobileSidebarToggle() {
         e.preventDefault();
         e.stopPropagation();
         // only operate as off-canvas toggle on narrow screens
-        if (window.innerWidth > 900) return;
+        if (!isMobileViewport()) return;
 
-        const opened = document.body.classList.toggle('sidebar-open');
-        if (opened) lockScrollAndGestures();
-        else unlockScrollAndGestures();
+        const opened = document.body.classList.contains('sidebar-open');
+        if (opened) closeSidebar();
+        else openSidebar();
     });
 
     backdrop.addEventListener('click', function () {
-        document.body.classList.remove('sidebar-open');
-        unlockScrollAndGestures();
+        closeSidebar();
     });
 
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
-            document.body.classList.remove('sidebar-open');
-            unlockScrollAndGestures();
+            closeSidebar();
         }
     });
 
     window.addEventListener('resize', function () {
         if (window.innerWidth > 900 && document.body.classList.contains('sidebar-open')) {
-            document.body.classList.remove('sidebar-open');
-            unlockScrollAndGestures();
+            closeSidebar();
         }
     });
+
+    // Swipe gestures for mobile: right swipe from left edge opens; left swipe closes.
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTarget = null;
+
+    document.addEventListener('touchstart', function (e) {
+        if (!isMobileViewport() || !e.touches || !e.touches[0]) return;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchStartTarget = e.target;
+    }, { passive: true });
+
+    document.addEventListener('touchend', function (e) {
+        if (!isMobileViewport() || !e.changedTouches || !e.changedTouches[0]) return;
+
+        const endX = e.changedTouches[0].clientX;
+        const endY = e.changedTouches[0].clientY;
+        const dx = endX - touchStartX;
+        const dy = endY - touchStartY;
+
+        // Gesture should be mostly horizontal.
+        if (Math.abs(dx) < 60 || Math.abs(dy) > 40) return;
+
+        const opened = document.body.classList.contains('sidebar-open');
+        const startInSidebar = Boolean(sidebar && touchStartTarget && sidebar.contains(touchStartTarget));
+        const startInBackdrop = Boolean(backdrop && touchStartTarget && backdrop.contains(touchStartTarget));
+
+        if (!opened && touchStartX <= 28 && dx > 0) {
+            openSidebar();
+            return;
+        }
+
+        if (opened && dx < 0 && (startInSidebar || startInBackdrop)) {
+            closeSidebar();
+        }
+    }, { passive: true });
 }
 
 setupMobileSidebarToggle();
