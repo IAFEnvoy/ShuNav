@@ -1,0 +1,28 @@
+[
+  {
+    "title": "素材站",
+    "description": "常用图片与图标来源",
+    "fold": false,
+    "items": [
+      {
+        "title": "SVG Repo",
+        "description": "免费 SVG 图标库，支持按主题快速筛选。"
+      },
+      {
+        "title": "Unsplash",
+        "description": "高质量摄影图片，适合封面与背景图。"
+      }
+    ]
+  },
+  {
+    "title": "校园相关",
+    "description": "课程作业与社团宣传常用图片资源",
+    "fold": true,
+    "items": [
+      {
+        "title": "上海大学图库示例",
+        "description": "用于存放校内活动海报、宣传图等。"
+      }
+    ]
+  }
+]

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐭🐭导航</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Noto+Sans+SC:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <header class="brand">
+        <h1>🐭🐭导航</h1>
+        <p>SHU人自己的导航站</p>
+        <div class="category-actions">
+          <button id="connectNetworkBtn" class="connect-btn" type="button">连接校园网</button>
+        </div>
+      </header>
+
+      <nav class="category-nav" aria-label="分类导航">
+        <div class="category-search">
+          <label class="sr-only" for="categorySearchInput">搜索站点</label>
+          <input id="categorySearchInput" class="search-input" type="search" placeholder="搜索名称、网址、描述"
+            autocomplete="off">
+        </div>
+
+        <div class="nav-block">
+          <ul id="favoritesNavList"></ul>
+        </div>
+
+        <div class="nav-block">
+          <h2>网站</h2>
+          <ul id="categoryNavList"></ul>
+        </div>
+
+        <div class="nav-block">
+          <h2>QQ群</h2>
+          <ul id="groupNavList"></ul>
+        </div>
+
+        <div class="nav-block">
+          <h2>图片</h2>
+          <ul id="imageNavList"></ul>
+        </div>
+
+        <div class="nav-block">
+          <h2>教程</h2>
+          <ul id="articleNavList"></ul>
+        </div>
+      </nav>
+
+      <footer class="sidebar-footer">
+        <small>Copyright Placeholder - Replace Me</small>
+      </footer>
+    </aside>
+
+    <main class="content" id="contentPane">
+      <section class="favorites-panel" id="favoritesSection">
+        <div class="section-head">
+          <h2>网站收藏夹</h2>
+          <p>保存在浏览器本地，可拖拽排序</p>
+        </div>
+        <div class="card-grid" id="favoritesGrid"></div>
+      </section>
+
+      <!-- 所有类型的收藏合并为一个统一收藏区 -->
+      <!-- 右侧统一显示网站/QQ群/图片/教程的收藏项 -->
+
+      <section class="categories" id="categoriesContainer"></section>
+      <section class="categories group-categories" id="groupCategoriesContainer"></section>
+      <section class="categories image-categories" id="imageCategoriesContainer"></section>
+      <section class="categories article-categories" id="articleCategoriesContainer"></section>
+    </main>
+  </div>
+
+  <script src="./script.js" type="module"></script>
+</body>
+
+</html>

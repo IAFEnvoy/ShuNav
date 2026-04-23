@@ -1,0 +1,140 @@
+[
+    {
+        "title": "通用",
+        "description": "常用校内入口与服务",
+        "fold": false,
+        "items": [
+            {
+                "name": "教务系统",
+                "url": "https://jwxt.shu.edu.cn",
+                "logo": "img/user-svgrepo-com.svg",
+                "description": "选课，课本官方订购，退课，课表"
+            },
+            {
+                "name": "成绩查询",
+                "url": "https://cj.shu.edu.cn",
+                "logo": "img/office-svgrepo-com.svg"
+            },
+            {
+                "name": "正版软件管理平台",
+                "url": "https://software.shu.edu.cn",
+                "logo": "img/software-install-svgrepo-com.svg",
+                "description": "下载MATLAB和免费office三件套"
+            },
+            {
+                "name": "智慧教室管理平台",
+                "url": "https://classroom.cc.shu.edu.cn",
+                "logo": "img/classroom-open-door-and-a-wall-clock-behind-svgrepo-com.svg",
+                "description": "查询空教室"
+            },
+            {
+                "name": "体育赛事成绩公布",
+                "url": "http://app.ydh800.cn/ADFB",
+                "logo": "img/sport-svgrepo-com.svg"
+            },
+            {
+                "name": "心理健康信息化管理平台",
+                "url": "https://xljk.shu.edu.cn",
+                "logo": "img/heart-shine-svgrepo-com.svg"
+            },
+            {
+                "name": "网上教学辅助平台",
+                "url": "https://learning.shu.edu.cn/portal",
+                "logo": "img/classroom-svgrepo-com.svg"
+            },
+            {
+                "name": "电话查询",
+                "url": "https://www.shu.edu.cn/dhcx.htm",
+                "logo": "img/telephone-svgrepo-com.svg"
+            },
+            {
+                "name": "校医院门诊",
+                "url": "http://xyy.shu.edu.cn/",
+                "logo": "img/hospital-svgrepo-com.svg"
+            },
+            {
+                "name": "党委本科生研究生工作部本科生处",
+                "url": "https://xgb.shu.edu.cn/",
+                "description": "涉及各类奖学金、补助通知"
+            },
+            {
+                "name": "共青团上海大学委员会",
+                "url": "https://youth.shu.edu.cn/",
+                "description": "涉及五四红旗团支部、十佳活力团支部、五四个人和集体、寒暑期社会实践、挑战杯、互联网+等。"
+            },
+            {
+                "name": "校友会",
+                "url": "https://alumni.shu.edu.cn/",
+                "description": "涉及小米奖学金、苏州工业园区奖学金等"
+            },
+            {
+                "name": "VPN使用说明",
+                "url": "https://vpn.shu.edu.cn/",
+                "logo": "img/vpn-svgrepo-com.svg"
+            }
+        ]
+    },
+    {
+        "title": "信息查询",
+        "description": "信息公开、活动与政策查询",
+        "fold": false,
+        "items": [
+            {
+                "name": "信息公开网",
+                "url": "https://xxgk.shu.edu.cn/",
+                "logo": "img/information-4-svgrepo-com.svg"
+            },
+            {
+                "name": "专业分流",
+                "url": "https://zyinfo.shu.edu.cn/NewsList.aspx",
+                "logo": "img/three-arrows-diversion-svgrepo-com.svg"
+            },
+            {
+                "name": "活动报名",
+                "url": "https://www.sz.shu.edu.cn/"
+            },
+            {
+                "name": "本科生院",
+                "url": "https://bksy.shu.edu.cn/",
+                "description": "查询思政选必，第二课堂，四类认证课程等"
+            },
+            {
+                "name": "院系列表",
+                "url": "https://www.shu.edu.cn/yxsz.htm",
+                "logo": "img/list-ul-alt-svgrepo-com.svg",
+                "description": "每个院的官网集合，部分官网有保研标准"
+            }
+        ]
+    },
+    {
+        "title": "课程专用",
+        "description": "课程和实验相关平台",
+        "fold": false,
+        "items": [
+            {
+                "name": "大物实验",
+                "url": "https://i-lab.shu.edu.cn",
+                "logo": "img/magnet-illustration-svgrepo-com.svg",
+                "description": "大物实验预约，课表查询，成绩查询"
+            },
+            {
+                "name": "实验室安全学习中心",
+                "url": "https://labsafe.shu.edu.cn",
+                "logo": "img/chemical-svgrepo-com.svg"
+            }
+        ]
+    },
+    {
+        "title": "非学校官方",
+        "description": "第三方学习与工具平台",
+        "fold": false,
+        "items": [
+            {
+                "name": "程序设计类实验辅助教学平台",
+                "url": "https://pintia.cn/home",
+                "logo": "img/code-svgrepo-com.svg",
+                "description": "练编程的"
+            }
+        ]
+    }
+]
