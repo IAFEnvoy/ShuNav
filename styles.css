@@ -27,6 +27,7 @@ body {
     radial-gradient(1200px 600px at 85% -20%, #d9f0e7 0%, rgba(217, 240, 231, 0) 70%),
     radial-gradient(800px 500px at -10% 105%, #f8e9d4 0%, rgba(248, 233, 212, 0) 65%),
     var(--bg-main);
+  background-attachment: fixed;
   user-select: none;
 }
 

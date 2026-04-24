@@ -35,24 +35,16 @@
           <ul id="favoritesNavList"></ul>
         </div>
 
-        <div class="nav-block">
-          <h2>网站</h2>
-          <ul id="categoryNavList"></ul>
-        </div>
+        <div id="dynamicNavContainer"></div>
 
         <div class="nav-block">
-          <h2>QQ群</h2>
-          <ul id="groupNavList"></ul>
-        </div>
-
-        <div class="nav-block">
-          <h2>图片</h2>
-          <ul id="imageNavList"></ul>
-        </div>
-
-        <div class="nav-block">
-          <h2>指南</h2>
-          <ul id="articleNavList"></ul>
+          <h2>贡献</h2>
+          <ul>
+            <li>
+              <button type="button" class="category-link"
+                onclick="window.open('/article.html?file=submit_new','_blank')">收录规则</button>
+            </li>
+          </ul>
         </div>
       </nav>
 
@@ -74,9 +66,6 @@
       <!-- 右侧统一显示网站/QQ群/图片/指南的收藏项 -->
 
       <section class="categories" id="categoriesContainer"></section>
-      <section class="categories group-categories" id="groupCategoriesContainer"></section>
-      <section class="categories image-categories" id="imageCategoriesContainer"></section>
-      <section class="categories article-categories" id="articleCategoriesContainer"></section>
     </main>
   </div>
 

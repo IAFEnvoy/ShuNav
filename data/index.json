@@ -1,0 +1,22 @@
+[
+  {
+    "title": "网站",
+    "logo": true,
+    "items": "websites"
+  },
+  {
+    "title": "QQ群",
+    "logo": false,
+    "items": "groups"
+  },
+  {
+    "title": "图片",
+    "logo": true,
+    "items": "images"
+  },
+  {
+    "title": "指南",
+    "logo": true,
+    "items": "articles"
+  }
+]

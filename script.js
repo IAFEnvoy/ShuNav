@@ -1,22 +1,14 @@
 import { openInNewPage, openNetworkConnectPage } from "./open-link.js";
 
-const WEBSITE_DATA_SOURCES = ["/data/websites.json", "./data/websites.json"];
-const GROUP_DATA_SOURCES = ["/data/groups.json", "./data/groups.json"];
-const IMAGE_DATA_SOURCES = ["/data/images.json", "./data/images.json"];
-const ARTICLE_DATA_SOURCES = ["/data/articles.json", "./data/articles.json"];
+const INDEX_DATA_SOURCES = ["/data/index.json", "./data/index.json"];
 const FAVORITES_KEY = "shunav:favorites";
-const WEBSITE_SECTION_PREFIX = "website";
-const GROUP_SECTION_PREFIX = "group";
-const IMAGE_SECTION_PREFIX = "image";
-const ARTICLE_SECTION_PREFIX = "article";
+const SECTION_PREFIX = "section";
 const FAVORITES_SECTION_ID = "favoritesSection";
 const COPY_ICON_PATH = "img/icon/icon-copy.svg";
 
 const state = {
-    categories: [],
-    groupCategories: [],
-    imageCategories: [],
-    articleCategories: [],
+    sections: [],           // Array of { title, logo, key, categories: [...] }
+    sectionConfigs: [],     // Raw index.json entries
     itemByName: {},
     unifiedFavorites: [],
     searchQuery: ""
@@ -24,16 +16,10 @@ const state = {
 
 const refs = {
     favoritesNavList: document.getElementById("favoritesNavList"),
-    navList: document.getElementById("categoryNavList"),
-    groupNavList: document.getElementById("groupNavList"),
-    imageNavList: document.getElementById("imageNavList"),
-    articleNavList: document.getElementById("articleNavList"),
+    dynamicNavContainer: document.getElementById("dynamicNavContainer"),
     contentPane: document.getElementById("contentPane"),
     favoritesGrid: document.getElementById("favoritesGrid"),
     categoriesContainer: document.getElementById("categoriesContainer"),
-    groupCategoriesContainer: document.getElementById("groupCategoriesContainer"),
-    imageCategoriesContainer: document.getElementById("imageCategoriesContainer"),
-    articleCategoriesContainer: document.getElementById("articleCategoriesContainer"),
     searchInput: document.getElementById("categorySearchInput")
 };
 
@@ -106,38 +92,59 @@ function matchesSearch(item, query) {
     return name.includes(query) || url.includes(query) || description.includes(query);
 }
 
-function getFilteredCategories() {
+function getFilteredSections() {
     const query = normalizeSearchText(state.searchQuery);
 
-    if (!query) return state.categories;
+    if (!query) return state.sections;
 
-    return state.categories
-        .map(function mapCategory(category) {
-            const matchedItems = category.items.filter(function filterItem(item) {
-                return matchesSearch(item, query);
-            });
+    return state.sections
+        .map(function mapSection(section) {
+            const matchedCategories = section.categories
+                .map(function mapCategory(category) {
+                    const matchedItems = category.items.filter(function filterItem(item) {
+                        return matchesSearch(item, query);
+                    });
+
+                    return {
+                        key: category.key,
+                        title: category.title,
+                        description: category.description,
+                        fold: category.fold,
+                        collapsed: false,
+                        items: matchedItems
+                    };
+                })
+                .filter(function filterCategory(category) {
+                    return category.items.length > 0;
+                });
 
             return {
-                key: category.key,
-                title: category.title,
-                description: category.description,
-                fold: category.fold,
-                // 在搜索时展开所有匹配到结果的分类，方便用户查看
-                collapsed: false,
-                items: matchedItems
+                title: section.title,
+                logo: section.logo,
+                key: section.key,
+                categories: matchedCategories
             };
         })
-        .filter(function filterCategory(category) {
-            return category.items.length > 0;
+        .filter(function filterSection(section) {
+            return section.categories.length > 0;
         });
 }
 
-function normalizeItem(item, categoryTitle) {
+function normalizeSectionItem(item, categoryTitle) {
     if (!item || typeof item !== "object") return null;
 
-    const name = typeof item.name === "string" && item.name.trim() ? item.name.trim() : "未命名";
-    const url = typeof item.url === "string" ? item.url.trim() : "";
+    const name = typeof item.name === "string" && item.name.trim()
+        ? item.name.trim()
+        : (typeof item.title === "string" && item.title.trim()
+            ? item.title.trim()
+            : "未命名");
+
+    const url = typeof item.url === "string" || typeof item.url === "number"
+        ? String(item.url).trim()
+        : "";
+
     const logo = typeof item.logo === "string" ? item.logo.trim() : "";
+
     const description = typeof item.description === "string" ? item.description.trim() : "";
 
     return {
@@ -149,7 +156,7 @@ function normalizeItem(item, categoryTitle) {
     };
 }
 
-function normalizeCategories(rawData) {
+function normalizeSectionCategories(rawData) {
     if (!Array.isArray(rawData)) return [];
 
     return rawData.map(function mapCategory(category, index) {
@@ -169,182 +176,7 @@ function normalizeCategories(rawData) {
         const items = Array.isArray(safeCategory.items)
             ? safeCategory.items
                 .map(function mapItem(item) {
-                    return normalizeItem(item, title);
-                })
-                .filter(Boolean)
-            : [];
-
-        return {
-            key: String(index),
-            title: title,
-            description: description,
-            fold: defaultFold,
-            collapsed: defaultFold,
-            items: items
-        };
-    });
-}
-
-function normalizeGroupItem(item, categoryTitle) {
-    if (!item || typeof item !== "object") return null;
-
-    const name = typeof item.name === "string" && item.name.trim() ? item.name.trim() : "未命名群";
-    const url = typeof item.url === "string" || typeof item.url === "number" ? String(item.url).trim() : "";
-    const description = typeof item.description === "string" ? item.description.trim() : "";
-
-    return {
-        name: name,
-        url: url,
-        description: description,
-        category: categoryTitle
-    };
-}
-
-function normalizeGroupCategories(rawData) {
-    if (!Array.isArray(rawData)) {
-        return [];
-    }
-
-    return rawData.map(function mapGroupCategory(category, index) {
-        const safeCategory = category && typeof category === "object" ? category : {};
-
-        const title =
-            typeof safeCategory.title === "string" && safeCategory.title.trim()
-                ? safeCategory.title.trim()
-                : "QQ群分类 " + (index + 1);
-
-        const description =
-            typeof safeCategory.description === "string" && safeCategory.description.trim()
-                ? safeCategory.description.trim()
-                : "";
-        const defaultFold = Boolean(safeCategory.fold);
-
-        const items = Array.isArray(safeCategory.items)
-            ? safeCategory.items
-                .map(function mapGroupItem(item) {
-                    return normalizeGroupItem(item, title);
-                })
-                .filter(Boolean)
-            : [];
-
-        return {
-            key: String(index),
-            title: title,
-            description: description,
-            fold: defaultFold,
-            collapsed: defaultFold,
-            items: items
-        };
-    });
-}
-
-function normalizeImageItem(item, categoryTitle) {
-    if (!item || typeof item !== "object") {
-        return null;
-    }
-
-    const title =
-        typeof item.title === "string" && item.title.trim()
-            ? item.title.trim()
-            : typeof item.name === "string" && item.name.trim()
-                ? item.name.trim()
-                : "未命名图片";
-    const description = typeof item.description === "string" ? item.description.trim() : "";
-    const url = typeof item.url === "string" ? item.url.trim() : "";
-
-    return {
-        title: title,
-        description: description,
-        url: url,
-        category: categoryTitle
-    };
-}
-
-function normalizeImageCategories(rawData) {
-    if (!Array.isArray(rawData)) {
-        return [];
-    }
-
-    return rawData.map(function mapImageCategory(category, index) {
-        const safeCategory = category && typeof category === "object" ? category : {};
-
-        const title =
-            typeof safeCategory.title === "string" && safeCategory.title.trim()
-                ? safeCategory.title.trim()
-                : "图片分类 " + (index + 1);
-
-        const description =
-            typeof safeCategory.description === "string" && safeCategory.description.trim()
-                ? safeCategory.description.trim()
-                : "";
-        const defaultFold = Boolean(safeCategory.fold);
-
-        const items = Array.isArray(safeCategory.items)
-            ? safeCategory.items
-                .map(function mapImageItem(item) {
-                    return normalizeImageItem(item, title);
-                })
-                .filter(Boolean)
-            : [];
-
-        return {
-            key: String(index),
-            title: title,
-            description: description,
-            fold: defaultFold,
-            collapsed: defaultFold,
-            items: items
-        };
-    });
-}
-
-function normalizeArticleItem(item, categoryTitle) {
-    if (!item || typeof item !== "object") {
-        return null;
-    }
-
-    const title =
-        typeof item.title === "string" && item.title.trim()
-            ? item.title.trim()
-            : typeof item.name === "string" && item.name.trim()
-                ? item.name.trim()
-                : "未命名指南";
-    const description = typeof item.description === "string" ? item.description.trim() : "";
-    const author = typeof item.author === "string" && item.author.trim() ? item.author.trim() : "未知作者";
-    const url = typeof item.url === "string" ? item.url.trim() : "";
-
-    return {
-        title: title,
-        description: description,
-        author: author,
-        url: url,
-        category: categoryTitle
-    };
-}
-
-function normalizeArticleCategories(rawData) {
-    if (!Array.isArray(rawData)) {
-        return [];
-    }
-
-    return rawData.map(function mapArticleCategory(category, index) {
-        const safeCategory = category && typeof category === "object" ? category : {};
-
-        const title =
-            typeof safeCategory.title === "string" && safeCategory.title.trim()
-                ? safeCategory.title.trim()
-                : "指南分类 " + (index + 1);
-
-        const description =
-            typeof safeCategory.description === "string" && safeCategory.description.trim()
-                ? safeCategory.description.trim()
-                : "";
-        const defaultFold = Boolean(safeCategory.fold);
-
-        const items = Array.isArray(safeCategory.items)
-            ? safeCategory.items
-                .map(function mapArticleItem(item) {
-                    return normalizeArticleItem(item, title);
+                    return normalizeSectionItem(item, title);
                 })
                 .filter(Boolean)
             : [];
@@ -365,29 +197,21 @@ function saveFavorites() {
 }
 
 function fetchDataBySources(sources) {
-    return sources.reduce(function chainFetch(previousPromise, source) {
-        return previousPromise.catch(function onError() {
-            return fetch(source, { cache: "no-store" }).then(function onResponse(response) {
-                if (!response.ok) {
-                    throw new Error("Fetch failed for " + source + " with HTTP " + response.status);
-                }
-
-                return response.json();
+    return sources.reduce((previousPromise, source) => {
+        return previousPromise.catch(_ => {
+            return fetch(source, { cache: "no-store" }).then(res => {
+                if (!res.ok) throw new Error("Fetch failed for " + source + " with HTTP " + res.status);
+                return res.json();
             });
         });
     }, Promise.reject(new Error("Initial fetch failed")));
 }
 
 function normalizeCategoryReferencePath(pathValue) {
-    if (typeof pathValue !== "string") {
-        return "";
-    }
-
-    const trimmed = pathValue.trim().replace(/\\/g, "/");
-    if (!trimmed) {
-        return "";
-    }
-
+    if (typeof pathValue !== "string") return "";
+    let trimmed = pathValue.trim().replace(/\\/g, "/");
+    if (!trimmed) return "";
+    if (trimmed.indexOf('.json') === -1) trimmed += '.json';
     return trimmed.replace(/^\.?\/+/, "");
 }
 
@@ -461,135 +285,32 @@ function resolveCategoryReferences(rawData, visitedReferences) {
     return Promise.all(tasks).then(flattenCategoryChunks);
 }
 
-function fetchNavigationData() {
-    return fetchDataBySources(WEBSITE_DATA_SOURCES)
+function fetchSectionData(itemsRef) {
+    var ref = typeof itemsRef === "string" ? itemsRef.trim() : "";
+    if (!ref) return Promise.resolve([]);
+
+    var filename = ref.replace(/^\.?\/*/, "");
+    if (filename.indexOf("data/") !== 0) {
+        filename = "data/" + filename;
+    }
+    if (filename.indexOf(".json") === -1) {
+        filename = filename + ".json";
+    }
+
+    var sources = ["/" + filename, "./" + filename];
+    return fetchDataBySources(sources)
         .then(resolveCategoryReferences)
-        .then(normalizeCategories);
+        .then(normalizeSectionCategories);
 }
 
-function fetchGroupData() {
-    return fetchDataBySources(GROUP_DATA_SOURCES)
-        .then(resolveCategoryReferences)
-        .then(normalizeGroupCategories);
-}
-
-function fetchImageData() {
-    return fetchDataBySources(IMAGE_DATA_SOURCES)
-        .then(resolveCategoryReferences)
-        .then(normalizeImageCategories);
-}
-
-function fetchArticleData() {
-    return fetchDataBySources(ARTICLE_DATA_SOURCES)
-        .then(resolveCategoryReferences)
-        .then(normalizeArticleCategories);
+function fetchIndexConfig() {
+    return fetchDataBySources(INDEX_DATA_SOURCES);
 }
 
 // --- unified favorites helpers (支持跨类型的统一收藏顺序与拖拽) ---
-function getFavoriteKeyForUnified(item, type) {
-    if (!type) return "";
-
-    switch (type) {
-        case "website":
-            return "website|" + (item && item.url ? item.url : "");
-        case "group":
-            return "group|" + (item && item.url ? item.url : "");
-        case "image":
-            return (
-                "image|" + (item && item.category ? item.category : "") + "|" + (item && item.title ? item.title : "")
-            );
-        case "article":
-            return (
-                "article|" +
-                (item && item.category ? item.category : "") +
-                "|" +
-                (item && item.title ? item.title : "") +
-                "|" +
-                (item && item.author ? item.author : "")
-            );
-        default:
-            return "";
-    }
-}
-
-function getFilteredGroupCategories() {
-    const query = normalizeSearchText(state.searchQuery);
-    if (!query) return state.groupCategories;
-
-    return state.groupCategories
-        .map(function mapCategory(category) {
-            const matchedItems = category.items.filter(function filterItem(item) {
-                return matchesSearch(item, query);
-            });
-
-            return {
-                key: category.key,
-                title: category.title,
-                description: category.description,
-                fold: category.fold,
-                // 搜索时展开匹配分类
-                collapsed: false,
-                items: matchedItems
-            };
-        })
-        .filter(function filterCategory(category) {
-            return category.items.length > 0;
-        });
-}
-
-function getFilteredImageCategories() {
-    const query = normalizeSearchText(state.searchQuery);
-    if (!query) return state.imageCategories;
-
-    return state.imageCategories
-        .map(function mapCategory(category) {
-            const matchedItems = category.items.filter(function filterItem(item) {
-                return matchesSearch(item, query);
-            });
-
-            return {
-                key: category.key,
-                title: category.title,
-                description: category.description,
-                fold: category.fold,
-                // 搜索时展开匹配分类
-                collapsed: false,
-                items: matchedItems
-            };
-        })
-        .filter(function filterCategory(category) {
-            return category.items.length > 0;
-        });
-}
-
-function getFilteredArticleCategories() {
-    const query = normalizeSearchText(state.searchQuery);
-    if (!query) return state.articleCategories;
-
-    return state.articleCategories
-        .map(function mapCategory(category) {
-            const matchedItems = category.items.filter(function filterItem(item) {
-                return matchesSearch(item, query);
-            });
-
-            return {
-                key: category.key,
-                title: category.title,
-                description: category.description,
-                fold: category.fold,
-                // 搜索时展开匹配分类
-                collapsed: false,
-                items: matchedItems
-            };
-        })
-        .filter(function filterCategory(category) {
-            return category.items.length > 0;
-        });
-}
-
-function addToUnifiedFavorites(url, type) {
+function addToUnifiedFavorites(url, mode) {
     removeFromUnifiedFavorites(url);
-    state.unifiedFavorites.push({ type, url });
+    state.unifiedFavorites.push({ mode: mode, url: url });
     saveFavorites();
 }
 
@@ -621,9 +342,9 @@ function reorderUnifiedFavorites(sourceUrl, targetUrl, insertBefore) {
     renderFavorites();
 }
 
-function moveUnifiedFavoriteToEnd(sourceKey) {
+function moveUnifiedFavoriteToEnd(sourceUrl) {
     const srcIndex = state.unifiedFavorites.findIndex(function (e) {
-        return getFavoriteKeyForUnified(e.item, e.type) === sourceKey;
+        return e.url === sourceUrl;
     });
 
     if (srcIndex === -1 || srcIndex === state.unifiedFavorites.length - 1) return;
@@ -633,7 +354,7 @@ function moveUnifiedFavoriteToEnd(sourceKey) {
     renderFavorites();
 }
 
-function enableFavoriteDragGeneric(card, item, type) {
+function enableFavoriteDragGeneric(card, item) {
     if (!card) return;
 
     const key = item.url;
@@ -698,8 +419,8 @@ function enableFavoriteDragGeneric(card, item, type) {
 }
 
 
-function getSectionId(prefix, index) {
-    return prefix + "-section-" + index;
+function getSectionId(prefix, sectionKey, categoryKey) {
+    return prefix + "-" + sectionKey + "-" + categoryKey;
 }
 
 function isFavorited(url) {
@@ -727,9 +448,9 @@ function openCardLink(url) {
     window.open(url, "_blank", "noopener,noreferrer");
 }
 
-function toggleFavorite(item, type) {
+function toggleFavorite(item, mode) {
     if (isFavorited(item.url)) removeFromUnifiedFavorites(item.url);
-    else addToUnifiedFavorites(item.url, type);
+    else addToUnifiedFavorites(item.url, mode);
     renderFavorites();
 }
 
@@ -825,8 +546,8 @@ function createWebsiteCard(item, options) {
 
         favoriteButton.addEventListener("click", function onFavoriteClick(event) {
             event.stopPropagation();
-            toggleFavorite(item, "website");
-            renderCategoriesArea();
+            toggleFavorite(item, "logo");
+            renderAll();
         });
 
         card.appendChild(favoriteButton);
@@ -886,8 +607,8 @@ function createGroupCard(groupItem) {
 
         if (favoriteButton.disabled) return;
 
-        toggleFavorite(groupItem, "group");
-        renderGroupCategoriesArea();
+        toggleFavorite(groupItem, "no-logo");
+        renderAll();
     });
 
     if (!groupItem.url) {
@@ -971,136 +692,6 @@ function createGroupCard(groupItem) {
     return card;
 }
 
-function createImageCard(imageItem) {
-    const card = document.createElement("article");
-    card.className = "image-card";
-    card.setAttribute("role", "button");
-
-    if (!imageItem.url) {
-        card.classList.add("disabled");
-        card.tabIndex = -1;
-    } else {
-        card.tabIndex = 0;
-        card.addEventListener("click", function onCardClick() {
-            if (Date.now() < dragState.suppressClickUntil) {
-                return;
-            }
-
-            openCardLink(imageItem.url);
-        });
-
-        card.addEventListener("keydown", function onCardKeydown(event) {
-            if (event.target !== card) return;
-            if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                openCardLink(imageItem.url);
-            }
-        });
-    }
-
-    const top = document.createElement("div");
-    top.className = "info-card-top";
-
-    const title = document.createElement("h3");
-    title.className = "info-card-title";
-    setHighlightedText(title, imageItem.title || "未命名图片", state.searchQuery);
-    top.appendChild(title);
-
-    const favoriteButton = document.createElement("button");
-    favoriteButton.type = "button";
-    favoriteButton.className = "favorite-toggle info-favorite-toggle";
-    setFavoriteButtonState(favoriteButton, imageItem.url);
-    favoriteButton.addEventListener("click", function onImageFavoriteClick(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        toggleFavorite(imageItem, "image");
-        renderImageCategoriesArea();
-    });
-    top.appendChild(favoriteButton);
-
-    card.appendChild(top);
-
-    const description = document.createElement("p");
-    description.className = "info-card-description";
-    setHighlightedText(description, imageItem.description || "暂无介绍", state.searchQuery);
-    card.appendChild(description);
-
-    return card;
-}
-
-function createArticleCard(articleItem) {
-    const card = document.createElement("article");
-    card.className = "article-card";
-    card.setAttribute("role", "button");
-
-    if (!articleItem.url) {
-        card.classList.add("disabled");
-        card.tabIndex = -1;
-    } else {
-        card.tabIndex = 0;
-        card.addEventListener("click", function onCardClick() {
-            if (Date.now() < dragState.suppressClickUntil) {
-                return;
-            }
-
-            openCardLink(articleItem.url);
-        });
-
-        card.addEventListener("keydown", function onCardKeydown(event) {
-            if (event.target !== card) {
-                return;
-            }
-
-            if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                openCardLink(articleItem.url);
-            }
-        });
-    }
-
-
-    const top = document.createElement("div");
-    top.className = "info-card-top";
-
-    const title = document.createElement("h3");
-    title.className = "info-card-title";
-    setHighlightedText(title, articleItem.title || "未命名指南", state.searchQuery);
-    top.appendChild(title);
-
-    const favoriteButton = document.createElement("button");
-    favoriteButton.type = "button";
-    favoriteButton.className = "favorite-toggle info-favorite-toggle";
-    setFavoriteButtonState(favoriteButton, articleItem.url);
-    favoriteButton.addEventListener("click", function onArticleFavoriteClick(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        toggleFavorite(articleItem, "article");
-        renderArticleCategoriesArea();
-    });
-    top.appendChild(favoriteButton);
-
-    card.appendChild(top);
-
-    const description = document.createElement("p");
-    description.className = "info-card-description";
-    setHighlightedText(description, articleItem.description || "暂无介绍", state.searchQuery);
-    card.appendChild(description);
-
-    const author = document.createElement("p");
-    author.className = "article-author";
-    const authorLabel = document.createElement("span");
-    authorLabel.className = "author-label";
-    authorLabel.textContent = "作者：";
-    const authorName = document.createElement("span");
-    authorName.className = "author-name";
-    setHighlightedText(authorName, articleItem.author || "未知作者", state.searchQuery);
-    author.appendChild(authorLabel);
-    author.appendChild(authorName);
-    card.appendChild(author);
-
-    return card;
-}
-
 function setupFavoritesDropZone() {
     refs.favoritesGrid.addEventListener("dragover", function onGridDragOver(event) {
         if (!dragState.draggingKey || event.target !== refs.favoritesGrid) {
@@ -1149,7 +740,10 @@ function createSidebarNavButton(listElement, text, sectionId) {
         const target = document.getElementById(sectionId);
 
         if (target) {
-            target.scrollIntoView({ behavior: "smooth", block: "start" });
+            const scrollContainer = refs.contentPane;
+            var targetTop = target.offsetTop;
+            var offset = 20;
+            scrollContainer.scrollTo({ top: Math.max(0, targetTop - offset), behavior: "smooth" });
             setActiveCategory(sectionId);
             // on small screens, clicking a nav item should close the off-canvas menu
             try {
@@ -1171,28 +765,6 @@ function createSidebarNavButton(listElement, text, sectionId) {
     listElement.appendChild(listItem);
 }
 
-function renderNavList(listElement, categories, prefix, emptyText) {
-    if (!listElement) {
-        return;
-    }
-
-    listElement.innerHTML = "";
-
-    if (categories.length === 0) {
-        const emptyItem = document.createElement("li");
-        emptyItem.className = "nav-empty-item";
-        emptyItem.textContent = emptyText;
-        listElement.appendChild(emptyItem);
-        return;
-    }
-
-    categories.forEach(function forEachCategory(category, index) {
-        const categoryKey = category && category.key != null ? category.key : String(index);
-        const sectionId = getSectionId(prefix, categoryKey);
-        createSidebarNavButton(listElement, category.title, sectionId);
-    });
-}
-
 function renderFavoritesSidebar() {
     if (!refs.favoritesNavList) {
         return;
@@ -1203,20 +775,36 @@ function renderFavoritesSidebar() {
     createSidebarNavButton(refs.favoritesNavList, "收藏夹", FAVORITES_SECTION_ID);
 }
 
-function renderWebsiteSidebar(categoriesForView) {
-    renderNavList(refs.navList, categoriesForView, WEBSITE_SECTION_PREFIX, "无匹配网站分类");
-}
+function renderSectionsSidebar(sectionsForView) {
+    if (!refs.dynamicNavContainer) return;
 
-function renderGroupSidebar() {
-    renderNavList(refs.groupNavList, state.groupCategories, GROUP_SECTION_PREFIX, "暂无QQ群分类");
-}
+    refs.dynamicNavContainer.innerHTML = "";
 
-function renderImageSidebar() {
-    renderNavList(refs.imageNavList, state.imageCategories, IMAGE_SECTION_PREFIX, "暂无图片分类");
-}
+    sectionsForView.forEach(function forEachSection(section, sIndex) {
+        var block = document.createElement("div");
+        block.className = "nav-block";
 
-function renderArticleSidebar() {
-    renderNavList(refs.articleNavList, state.articleCategories, ARTICLE_SECTION_PREFIX, "暂无指南分类");
+        var heading = document.createElement("h2");
+        heading.textContent = section.title;
+        block.appendChild(heading);
+
+        var list = document.createElement("ul");
+        section.categories.forEach(function forEachCategory(category, cIndex) {
+            var categoryKey = category && category.key != null ? category.key : String(cIndex);
+            var sectionId = getSectionId(SECTION_PREFIX, section.key, categoryKey);
+            createSidebarNavButton(list, category.title, sectionId);
+        });
+
+        if (section.categories.length === 0) {
+            var emptyItem = document.createElement("li");
+            emptyItem.className = "nav-empty-item";
+            emptyItem.textContent = "暂无内容";
+            list.appendChild(emptyItem);
+        }
+
+        block.appendChild(list);
+        refs.dynamicNavContainer.appendChild(block);
+    });
 }
 
 function setupScrollSpy() {
@@ -1234,14 +822,14 @@ function setupScrollSpy() {
         },
         {
             root: refs.contentPane,
-            rootMargin: "-35% 0px -55% 0px",
+            rootMargin: "-8px 0px -90% 0px",
             threshold: 0
         }
     );
 
     const sections = refs.contentPane.querySelectorAll(
         "#" + FAVORITES_SECTION_ID +
-        ", .category-section[id], .group-category-section[id], .image-category-section[id], .article-category-section[id]"
+        ", .category-section[id], .group-category-section[id]"
     );
     sections.forEach(function forEachSection(section) {
         sectionObserver.observe(section);
@@ -1255,56 +843,21 @@ function setupScrollSpy() {
     setActiveCategory("");
 }
 
-function toggleWebsiteCategoryFold(categoryKey) {
-    const category = state.categories.find(function findCategory(item) {
-        return item.key === categoryKey;
+function toggleCategoryFold(sectionKey, categoryKey) {
+    var section = state.sections.find(function findSection(s) {
+        return s.key === sectionKey;
     });
 
-    if (!category) {
-        return;
-    }
+    if (!section) return;
 
-    category.collapsed = !category.collapsed;
-    renderCategoriesArea();
-}
-
-function toggleGroupCategoryFold(categoryKey) {
-    const category = state.groupCategories.find(function findCategory(item) {
-        return item.key === categoryKey;
+    var category = section.categories.find(function findCategory(c) {
+        return c.key === categoryKey;
     });
 
-    if (!category) {
-        return;
-    }
+    if (!category) return;
 
     category.collapsed = !category.collapsed;
-    renderGroupCategoriesArea();
-}
-
-function toggleImageCategoryFold(categoryKey) {
-    const category = state.imageCategories.find(function findCategory(item) {
-        return item.key === categoryKey;
-    });
-
-    if (!category) {
-        return;
-    }
-
-    category.collapsed = !category.collapsed;
-    renderImageCategoriesArea();
-}
-
-function toggleArticleCategoryFold(categoryKey) {
-    const category = state.articleCategories.find(function findCategory(item) {
-        return item.key === categoryKey;
-    });
-
-    if (!category) {
-        return;
-    }
-
-    category.collapsed = !category.collapsed;
-    renderArticleCategoriesArea();
+    renderAll();
 }
 
 function createCategorySectionHead(category, countText, onToggleFold) {
@@ -1352,22 +905,13 @@ function createCategorySectionHead(category, countText, onToggleFold) {
     return head;
 }
 
-function createTypeHead(title) {
-    const section = document.createElement("section");
-    section.className = 'category-section';
-    const h2 = document.createElement('h2');
-    h2.style.margin = '0px';
-    h2.innerText = title;
-    section.appendChild(h2);
-    return section;
-}
+function renderAll() {
+    var sectionsForView = getFilteredSections();
+    refs.categoriesContainer.innerHTML = "";
+    renderSectionsSidebar(sectionsForView);
 
-function renderCategorySections(categoriesForView) {
-    refs.categoriesContainer.innerHTML = '';
-    refs.categoriesContainer.appendChild(createTypeHead('网站'));
-
-    if (categoriesForView.length === 0) {
-        const noMatch = document.createElement("p");
+    if (sectionsForView.length === 0) {
+        var noMatch = document.createElement("p");
         noMatch.className = "empty-state";
         noMatch.textContent = "未找到匹配内容。";
         refs.categoriesContainer.appendChild(noMatch);
@@ -1375,272 +919,59 @@ function renderCategorySections(categoriesForView) {
         return;
     }
 
-    categoriesForView.forEach(function forEachCategory(category, index) {
-        const categoryKey = category && category.key != null ? category.key : String(index);
+    sectionsForView.forEach(function forEachSection(section, sIndex) {
+        var sectionKey = section && section.key != null ? section.key : String(sIndex);
+        var isLogoMode = section.logo === true;
 
-        const section = document.createElement("section");
-        section.className = "category-section";
-        section.id = getSectionId(WEBSITE_SECTION_PREFIX, categoryKey);
+        section.categories.forEach(function forEachCategory(category, cIndex) {
+            var categoryKey = category && category.key != null ? category.key : String(cIndex);
 
-        const head = createCategorySectionHead(category, category.items.length + " 个链接", function onToggle() {
-            toggleWebsiteCategoryFold(categoryKey);
-        });
+            var sectionEl = document.createElement("section");
+            sectionEl.className = isLogoMode ? "category-section" : "group-category-section";
+            sectionEl.id = getSectionId(SECTION_PREFIX, sectionKey, categoryKey);
 
-        section.appendChild(head);
-
-        if (category.collapsed) {
-            section.classList.add("is-collapsed");
-            refs.categoriesContainer.appendChild(section);
-            return;
-        }
-
-        const body = document.createElement("div");
-        body.className = "section-body";
-
-        if (category.items.length === 0) {
-            const empty = document.createElement("p");
-            empty.className = "empty-state";
-            empty.textContent = "该分类暂时没有链接。";
-            body.appendChild(empty);
-        } else {
-            const grid = document.createElement("div");
-            grid.className = "card-grid";
-
-            category.items.forEach(function forEachItem(item) {
-                grid.appendChild(createWebsiteCard(item, { showCategory: false, enableDrag: false }));
+            var countText = category.items.length + " 个项目";
+            var head = createCategorySectionHead(category, countText, function onToggle() {
+                toggleCategoryFold(sectionKey, categoryKey);
             });
 
-            body.appendChild(grid);
-        }
+            sectionEl.appendChild(head);
 
-        section.appendChild(body);
+            if (category.collapsed) {
+                sectionEl.classList.add("is-collapsed");
+                refs.categoriesContainer.appendChild(sectionEl);
+                return;
+            }
 
-        refs.categoriesContainer.appendChild(section);
+            var body = document.createElement("div");
+            body.className = "section-body";
+
+            if (category.items.length === 0) {
+                var empty = document.createElement("p");
+                empty.className = "empty-state";
+                empty.textContent = "该分类暂时没有内容。";
+                body.appendChild(empty);
+            } else {
+                var grid = document.createElement("div");
+                grid.className = isLogoMode ? "card-grid" : "card-grid group-card-grid";
+
+                category.items.forEach(function forEachItem(item) {
+                    if (isLogoMode) {
+                        grid.appendChild(createWebsiteCard(item, { showCategory: false }));
+                    } else {
+                        grid.appendChild(createGroupCard(item));
+                    }
+                });
+
+                body.appendChild(grid);
+            }
+
+            sectionEl.appendChild(body);
+            refs.categoriesContainer.appendChild(sectionEl);
+        });
     });
 
     setupScrollSpy();
-}
-
-function renderCategoriesArea() {
-    const categoriesForView = getFilteredCategories();
-    renderWebsiteSidebar(categoriesForView);
-    renderCategorySections(categoriesForView);
-}
-
-function renderGroupCategorySections() {
-    // 接受预过滤后的分类数组（方便搜索时只显示匹配项）
-    refs.groupCategoriesContainer.innerHTML = '';
-    refs.groupCategoriesContainer.appendChild(createTypeHead('QQ群'));
-
-    if (!Array.isArray(arguments[0]) || arguments[0].length === 0) {
-        const empty = document.createElement("p");
-        empty.className = "empty-state";
-        empty.textContent = "暂无QQ群内容。";
-        refs.groupCategoriesContainer.appendChild(empty);
-        setupScrollSpy();
-        return;
-    }
-
-    const categoriesForView = arguments[0];
-
-    categoriesForView.forEach(function forEachGroupCategory(category, index) {
-        const categoryKey = category && category.key != null ? category.key : String(index);
-
-        const section = document.createElement("section");
-        section.className = "group-category-section";
-        section.id = getSectionId(GROUP_SECTION_PREFIX, categoryKey);
-
-        const head = createCategorySectionHead(category, category.items.length + " 个QQ群", function onToggle() {
-            toggleGroupCategoryFold(categoryKey);
-        });
-
-        section.appendChild(head);
-
-        if (category.collapsed) {
-            section.classList.add("is-collapsed");
-            refs.groupCategoriesContainer.appendChild(section);
-            return;
-        }
-
-        const body = document.createElement("div");
-        body.className = "section-body";
-
-        if (category.items.length === 0) {
-            const categoryEmpty = document.createElement("p");
-            categoryEmpty.className = "empty-state";
-            categoryEmpty.textContent = "该分类暂时没有QQ群。";
-            body.appendChild(categoryEmpty);
-        } else {
-            const grid = document.createElement("div");
-            grid.className = "card-grid group-card-grid";
-
-            category.items.forEach(function forEachGroupItem(groupItem) {
-                grid.appendChild(createGroupCard(groupItem));
-            });
-
-            body.appendChild(grid);
-        }
-
-        section.appendChild(body);
-
-        refs.groupCategoriesContainer.appendChild(section);
-    });
-
-    setupScrollSpy();
-}
-
-function renderGroupCategoriesArea() {
-    const categoriesForView = getFilteredGroupCategories();
-    renderNavList(refs.groupNavList, categoriesForView, GROUP_SECTION_PREFIX, "暂无QQ群分类");
-    renderGroupCategorySections(categoriesForView);
-}
-
-function renderImageCategorySections() {
-    // 支持接收过滤过的分类列表（用于搜索）
-    refs.imageCategoriesContainer.innerHTML = '';
-    refs.imageCategoriesContainer.appendChild(createTypeHead('图片'));
-
-    if (!Array.isArray(arguments[0]) || arguments[0].length === 0) {
-        const empty = document.createElement("p");
-        empty.className = "empty-state";
-        empty.textContent = "暂无图片内容。";
-        refs.imageCategoriesContainer.appendChild(empty);
-        setupScrollSpy();
-        return;
-    }
-
-    const categoriesForView = arguments[0];
-
-    categoriesForView.forEach(function forEachImageCategory(category, index) {
-        const categoryKey = category && category.key != null ? category.key : String(index);
-
-        const section = document.createElement("section");
-        section.className = "image-category-section";
-        section.id = getSectionId(IMAGE_SECTION_PREFIX, categoryKey);
-
-        const head = createCategorySectionHead(category, category.items.length + " 张图片", function onToggle() {
-            toggleImageCategoryFold(categoryKey);
-        });
-
-        section.appendChild(head);
-
-        if (category.collapsed) {
-            section.classList.add("is-collapsed");
-            refs.imageCategoriesContainer.appendChild(section);
-            return;
-        }
-
-        const body = document.createElement("div");
-        body.className = "section-body";
-
-        if (category.items.length === 0) {
-            const categoryEmpty = document.createElement("p");
-            categoryEmpty.className = "empty-state";
-            categoryEmpty.textContent = "该分类暂时没有图片。";
-            body.appendChild(categoryEmpty);
-        } else {
-            const grid = document.createElement("div");
-            grid.className = "card-grid image-card-grid";
-
-            category.items.forEach(function forEachImageItem(imageItem) {
-                grid.appendChild(createImageCard(imageItem));
-            });
-
-            body.appendChild(grid);
-        }
-
-        section.appendChild(body);
-        refs.imageCategoriesContainer.appendChild(section);
-    });
-
-    setupScrollSpy();
-}
-
-function renderImageCategoriesArea() {
-    const categoriesForView = getFilteredImageCategories();
-    renderNavList(refs.imageNavList, categoriesForView, IMAGE_SECTION_PREFIX, "暂无图片分类");
-    renderImageCategorySections(categoriesForView);
-}
-
-function renderArticleCategorySections() {
-    // 支持接收过滤过的分类数组（用于搜索）
-    refs.articleCategoriesContainer.innerHTML = '';
-    refs.articleCategoriesContainer.appendChild(createTypeHead('指南'));
-
-    if (!Array.isArray(arguments[0]) || arguments[0].length === 0) {
-        const empty = document.createElement("p");
-        empty.className = "empty-state";
-        empty.textContent = "暂无指南内容。";
-        refs.articleCategoriesContainer.appendChild(empty);
-        setupScrollSpy();
-        return;
-    }
-
-    const categoriesForView = arguments[0];
-
-    categoriesForView.forEach(function forEachArticleCategory(category, index) {
-        const categoryKey = category && category.key != null ? category.key : String(index);
-
-        const section = document.createElement("section");
-        section.className = "article-category-section";
-        section.id = getSectionId(ARTICLE_SECTION_PREFIX, categoryKey);
-
-        const head = createCategorySectionHead(category, category.items.length + " 篇指南", function onToggle() {
-            toggleArticleCategoryFold(categoryKey);
-        });
-
-        section.appendChild(head);
-
-        if (category.collapsed) {
-            section.classList.add("is-collapsed");
-            refs.articleCategoriesContainer.appendChild(section);
-            return;
-        }
-
-        const body = document.createElement("div");
-        body.className = "section-body";
-
-        if (category.items.length === 0) {
-            const categoryEmpty = document.createElement("p");
-            categoryEmpty.className = "empty-state";
-            categoryEmpty.textContent = "该分类暂时没有指南。";
-            body.appendChild(categoryEmpty);
-        } else {
-            const grid = document.createElement("div");
-            grid.className = "card-grid article-card-grid";
-
-            category.items.forEach(function forEachArticleItem(articleItem) {
-                grid.appendChild(createArticleCard(articleItem));
-            });
-
-            body.appendChild(grid);
-        }
-
-        section.appendChild(body);
-        refs.articleCategoriesContainer.appendChild(section);
-    });
-
-    setupScrollSpy();
-}
-
-function renderArticleCategoriesArea() {
-    const categoriesForView = getFilteredArticleCategories();
-    renderNavList(refs.articleNavList, categoriesForView, ARTICLE_SECTION_PREFIX, "暂无指南分类");
-    renderArticleCategorySections(categoriesForView);
-}
-
-function setupSearch() {
-    if (!refs.searchInput) {
-        return;
-    }
-
-    refs.searchInput.addEventListener("input", function onSearchInput(event) {
-        state.searchQuery = event.target.value || "";
-        renderCategoriesArea();
-        renderGroupCategoriesArea();
-        renderImageCategoriesArea();
-        renderArticleCategoriesArea();
-    });
 }
 
 function renderFavorites() {
@@ -1655,35 +986,23 @@ function renderFavorites() {
     }
 
     state.unifiedFavorites.forEach(function (entry) {
-        const type = entry.type;
         const item = state.itemByName[entry.url];
+        if (!item) return;
 
-        if (type === "website") {
-            const cardW = createWebsiteCard(item);
-            refs.favoritesGrid.appendChild(cardW);
-            enableFavoriteDragGeneric(cardW, item, "website");
-        } else if (type === "group") {
-            const cardG = createGroupCard(item);
-            refs.favoritesGrid.appendChild(cardG);
-            enableFavoriteDragGeneric(cardG, item, "group");
-        } else if (type === "image") {
-            const cardI = createImageCard(item);
-            refs.favoritesGrid.appendChild(cardI);
-            enableFavoriteDragGeneric(cardI, item, "image");
-        } else if (type === "article") {
-            const cardA = createArticleCard(item);
-            refs.favoritesGrid.appendChild(cardA);
-            enableFavoriteDragGeneric(cardA, item, "article");
+        var card;
+        if (entry.mode === "logo") {
+            card = createWebsiteCard(item);
+        } else {
+            card = createGroupCard(item);
         }
+        refs.favoritesGrid.appendChild(card);
+        enableFavoriteDragGeneric(card, item);
     });
 }
 
 function renderLoadingState() {
     refs.favoritesGrid.innerHTML = '<p class="loading-state">正在加载收藏夹...</p>';
-    refs.categoriesContainer.innerHTML = '<p class="loading-state">正在加载分类...</p>';
-    refs.groupCategoriesContainer.innerHTML = '<p class="loading-state">正在加载QQ群...</p>';
-    refs.imageCategoriesContainer.innerHTML = '<p class="loading-state">正在加载图片...</p>';
-    refs.articleCategoriesContainer.innerHTML = '<p class="loading-state">正在加载指南...</p>';
+    refs.categoriesContainer.innerHTML = '<p class="loading-state">正在加载数据...</p>';
 }
 
 function renderErrorState(div, message) {
@@ -1698,62 +1017,82 @@ function renderErrorState(div, message) {
 function init() {
     renderLoadingState();
     state.unifiedFavorites = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? "[]");
+    // 迁移旧数据：将 type 映射为 mode
+    state.unifiedFavorites = state.unifiedFavorites.map(function migrate(entry) {
+        if (entry.mode) return entry;
+        var mode = "no-logo";
+        if (entry.type === "website" || entry.type === "image" || entry.type === "article") {
+            mode = "logo";
+        }
+        return { mode: mode, url: entry.url };
+    });
+    saveFavorites();
     renderFavoritesSidebar();
 
-    let websiteErrorMessage = "";
-    let groupErrorMessage = "";
-    let imageErrorMessage = "";
-    let articleErrorMessage = "";
+    fetchIndexConfig()
+        .then(function onConfigLoaded(config) {
+            if (!Array.isArray(config)) {
+                throw new Error("index.json 格式无效，需要一个数组");
+            }
+            state.sectionConfigs = config;
 
-    Promise.all([
-        fetchNavigationData().catch(err => {
-            console.error(err);
-            websiteErrorMessage = "加载 /data/websites.json 失败，请检查文件路径和 JSON 格式。";
-            return [];
-        }),
-        fetchGroupData().catch(err => {
-            console.error(err);
-            groupErrorMessage = "加载 /data/groups.json 失败，请检查文件路径和 JSON 格式。";
-            return [];
-        }),
-        fetchImageData().catch(err => {
-            console.error(err);
-            imageErrorMessage = "加载 /data/images.json 失败，请检查文件路径和 JSON 格式。";
-            return [];
-        }),
-        fetchArticleData().catch(err => {
-            console.error(err);
-            articleErrorMessage = "加载 /data/articles.json 失败，请检查文件路径和 JSON 格式。";
-            return [];
+            var loadTasks = config.map(function mapConfig(entry, index) {
+                var sectionKey = String(index);
+                return fetchSectionData(entry.items)
+                    .then(categories => {
+                        return {
+                            title: entry.title,
+                            logo: entry.logo === true,
+                            key: sectionKey,
+                            categories: categories
+                        };
+                    })
+                    .catch(err => {
+                        console.warn("加载分类数据失败:", entry.title, err);
+                        return {
+                            title: entry.title,
+                            logo: entry.logo === true,
+                            key: sectionKey,
+                            categories: []
+                        };
+                    });
+            });
+
+            return Promise.all(loadTasks);
         })
-    ]).then(results => {
-        state.categories = results[0];
-        state.groupCategories = results[1];
-        state.imageCategories = results[2];
-        state.articleCategories = results[3];
+        .then(function onAllLoaded(sections) {
+            state.sections = sections;
 
-        state.itemByName = {}
-        results[0].flatMap(x => x.items).forEach(item => state.itemByName[item.url] = item)
-        //FIXME::Normalize QQ key
-        results[1].flatMap(x => x.items).forEach(item => state.itemByName[item.url] = item)
-        results[2].flatMap(x => x.items).forEach(item => state.itemByName[item.url] = item)
-        results[3].flatMap(x => x.items).forEach(item => state.itemByName[item.url] = item)
+            state.itemByName = {};
+            sections.forEach(function forEachSection(section) {
+                section.categories.forEach(function forEachCategory(category) {
+                    category.items.forEach(function forEachItem(item) {
+                        if (item.url) {
+                            state.itemByName[item.url] = item;
+                        }
+                    });
+                });
+            });
 
-        renderFavorites();
-        renderCategoriesArea();
-        renderGroupCategoriesArea();
-        renderImageCategoriesArea();
-        renderArticleCategoriesArea();
+            renderFavorites();
+            renderAll();
+        })
+        .catch(function onInitError(err) {
+            console.error("初始化失败:", err);
+            renderErrorState(refs.categoriesContainer, "数据加载失败，请确保 data/index.json 及相关数据文件存在且格式正确。");
+        });
+}
 
-        if (websiteErrorMessage) renderErrorState(refs.categoriesContainer, websiteErrorMessage);
-        if (groupErrorMessage) renderErrorState(refs.groupCategoriesContainer, groupErrorMessage);
-        if (imageErrorMessage) renderErrorState(refs.imageCategoriesContainer, imageErrorMessage);
-        if (articleErrorMessage) renderErrorState(refs.articleCategoriesContainer, articleErrorMessage);
+function setupSearch() {
+    if (!refs.searchInput) return;
+    refs.searchInput.addEventListener("input", function onSearchInput(event) {
+        state.searchQuery = event.target.value || "";
+        renderAll();
     });
 }
 
-setupFavoritesDropZone();
 setupSearch();
+setupFavoritesDropZone();
 // mobile sidebar toggle: create backdrop and wire up toggle button for small screens
 function setupMobileSidebarToggle() {
     const toggle = document.getElementById('mobileSidebarToggle');
