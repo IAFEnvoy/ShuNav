@@ -21,6 +21,12 @@
                 "logo": "img/vpn-svgrepo-com.svg"
             },
             {
+                "name": "OTP令牌",
+                "url": "https://otp.shu.edu.cn//Default.aspx",
+                "logo": "img/key-svgrepo-com.svg",
+                "description": "获取动态口令，目前给VPN使用"
+            },
+            {
                 "name": "正版软件管理平台",
                 "url": "https://software.shu.edu.cn",
                 "logo": "img/software-install-svgrepo-com.svg",
