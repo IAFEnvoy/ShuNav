@@ -27,6 +27,17 @@
                 "description": "获取动态口令，目前给VPN使用"
             },
             {
+                "name": "OAuth系统",
+                "url": "https://oauth.shu.edu.cn/",
+                "logo": "img/oauth-svgrepo-com.svg",
+                "description": "统一认证管理和邮箱注册"
+            },
+            {
+                "name": "邮件系统",
+                "url": "https://newmail.shu.edu.cn/coremail/",
+                "logo": "img/email-svgrepo-com.svg"
+            },
+            {
                 "name": "正版软件管理平台",
                 "url": "https://software.shu.edu.cn",
                 "logo": "img/software-install-svgrepo-com.svg",
@@ -123,6 +134,17 @@
                 "name": "实验室安全学习中心",
                 "url": "https://labsafe.shu.edu.cn",
                 "logo": "img/chemical-svgrepo-com.svg"
+            }
+        ]
+    },
+    {
+        "title": "选课小本本",
+        "fold": false,
+        "items": [
+            {
+                "name": "选课小本本",
+                "url": "https://course-rate.icu/",
+                "logo": "img/rate-svgrepo-com.svg"
             }
         ]
     },
